@@ -204,6 +204,7 @@ class SessionManager:
         self.env: Optional[BeamlineEnv] = None
         self.speed = 1.0
         self.cancel_event = threading.Event()
+        self.paused = threading.Event()   # set = Watch playback paused
         self.active_thread: Optional[threading.Thread] = None
         self.loop = asyncio.get_event_loop()
 
@@ -231,6 +232,191 @@ class SessionManager:
             asyncio.run_coroutine_threadsafe(self.send_state(payload), self.loop)
         except Exception:
             pass
+
+# ---------------------------------------------------------------------------
+# Watch tabs: one playback mechanism for both the algorithm and the Gemini replay
+# ---------------------------------------------------------------------------
+BAYES_DIR = Path(__file__).resolve().parent / "data" / "bayes"
+# Same honest reference as the benchmark: independent agent seed, roughening 0.2, 100k particles.
+BAYES_PARAMS = {"n_particles": 100_000, "chunk_size": 25_000, "roughening": 0.2}
+BAYES_SEED_OFFSET = 1_000_003
+
+_bayes_cache: dict[int, list[dict[str, list[float]]]] = {}
+_bayes_cache_lock = threading.Lock()
+
+
+def _load_bayes_recordings() -> None:
+    """Load precomputed reference runs (made by `python -m webapp.record_bayes`)."""
+    if not BAYES_DIR.exists():
+        return
+    for f in sorted(BAYES_DIR.glob("seed_*.json")):
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+            _bayes_cache[int(data["seed"])] = data["shots"]
+        except Exception:
+            continue
+
+
+_load_bayes_recordings()
+
+
+class ShotFeed:
+    """Corrector settings for one playback: a finished list, or filled live by a producer thread."""
+
+    def __init__(self, shots: Optional[list[dict[str, Any]]] = None):
+        self._shots: list[dict[str, Any]] = list(shots) if shots is not None else []
+        self._finished = shots is not None
+        self._cond = threading.Condition()
+
+    def append(self, shot: dict[str, Any]) -> None:
+        with self._cond:
+            self._shots.append(shot)
+            self._cond.notify_all()
+
+    def finish(self) -> None:
+        with self._cond:
+            self._finished = True
+            self._cond.notify_all()
+
+    def wait_for(self, idx: int, cancel: threading.Event) -> Optional[dict[str, Any]]:
+        """Return shot `idx`, waiting for the producer if needed; None when there is no such shot."""
+        with self._cond:
+            while idx >= len(self._shots) and not self._finished:
+                if cancel.is_set():
+                    return None
+                self._cond.wait(timeout=0.1)
+            return self._shots[idx] if idx < len(self._shots) else None
+
+    def __len__(self) -> int:
+        with self._cond:
+            return len(self._shots)
+
+    @property
+    def finished(self) -> bool:
+        with self._cond:
+            return self._finished
+
+    def snapshot(self) -> list[dict[str, Any]]:
+        with self._cond:
+            return list(self._shots)
+
+
+def compute_bayes_run(seed: int, feed: ShotFeed, cancel: threading.Event) -> Optional[BeamlineEnv]:
+    """Run the honest reference BayesAgent on BeamlineEnv(seed); every shot is appended to `feed`.
+
+    Returns the finished env, or None if cancelled. Replaying the recorded settings through a
+    fresh BeamlineEnv(seed) reproduces the run exactly (same seed, same shot sequence).
+    """
+
+    class RecordingEnv(BeamlineEnv):
+        def set_correctors(self, h, v):
+            if cancel.is_set():
+                raise InterruptedError("cancelled")
+            res = super().set_correctors(h, v)
+            feed.append({
+                "theta_h": self._sim.current_theta_h.tolist(),
+                "theta_v": self._sim.current_theta_v.tolist(),
+            })
+            return res
+
+    env = RecordingEnv(seed=seed, budget=60)
+    agent = BayesAgent(**BAYES_PARAMS, seed=seed + BAYES_SEED_OFFSET)
+    try:
+        agent.solve(env)
+    except InterruptedError:
+        feed.finish()
+        return None
+    feed.finish()
+    return env
+
+
+def _bayes_producer(seed: int, feed: ShotFeed, cancel: threading.Event) -> None:
+    """Fallback when no recording exists: compute live, then cache for the next viewer."""
+    try:
+        env = compute_bayes_run(seed, feed, cancel)
+    except Exception:
+        feed.finish()
+        return
+    if env is not None:
+        with _bayes_cache_lock:
+            _bayes_cache[seed] = feed.snapshot()
+
+
+def _wait_while_paused(session: "SessionManager", cancel: threading.Event) -> bool:
+    while session.paused.is_set() and not cancel.is_set():
+        cancel.wait(0.05)
+    return not cancel.is_set()
+
+
+def _paced_delay(session: "SessionManager", cancel: threading.Event) -> bool:
+    """Wait 1/speed seconds of *unpaused* time; speed changes apply immediately."""
+    waited = 0.0
+    while not cancel.is_set():
+        target = 1.0 / max(0.1, session.speed)
+        if waited >= target:
+            return True
+        step = min(0.02, target - waited)
+        time.sleep(step)
+        if not session.paused.is_set():
+            waited += step
+    return False
+
+
+def run_playback(
+    session: "SessionManager",
+    env: BeamlineEnv,
+    mode: str,
+    feed: ShotFeed,
+    cancel: threading.Event,
+    text_blocks: Optional[list[str]] = None,
+    final_text: str = "",
+) -> None:
+    """Step the displayed machine through `feed` at the session's speed; honours pause/resume."""
+    idx = 0
+    n_planned = len(feed) if feed.finished else 60
+    while not cancel.is_set():
+        if not _wait_while_paused(session, cancel):
+            return
+        shot = feed.wait_for(idx, cancel)
+        if shot is None:
+            break
+        if session.paused.is_set():   # paused while waiting for the producer: don't step yet
+            continue
+        obs = env.set_correctors(shot["theta_h"], shot["theta_v"])
+        idx += 1
+
+        text_slice = ""
+        if text_blocks:
+            target = max(1, int(idx * len(text_blocks) / max(1, n_planned)))
+            text_slice = "\n\n---\n\n".join(text_blocks[:target])
+
+        payload = format_state_payload(
+            env=env, mode=mode, seed=session.seed, shot=env._sim.shots_used,
+            theta_h=list(shot["theta_h"]), theta_v=list(shot["theta_v"]),
+            obs_h=obs["h"], obs_v=obs["v"], done=False, agent_text=text_slice,
+        )
+        payload["done"] = False
+        session.send_state_threadsafe(payload)
+
+        if env._sim.shots_used >= 60 or (feed.finished and idx >= len(feed)):
+            break
+        if not _paced_delay(session, cancel):
+            return
+
+    if cancel.is_set():
+        return
+    if not env._submitted:
+        env.submit()
+    last = env._sim.last_result
+    fin = format_state_payload(
+        env=env, mode=mode, seed=session.seed, shot=env._sim.shots_used,
+        theta_h=env._sim.current_theta_h.tolist(), theta_v=env._sim.current_theta_v.tolist(),
+        obs_h=[{"ratio": o.ratio, "level": o.level} for o in last.obs_h],
+        obs_v=[{"ratio": o.ratio, "level": o.level} for o in last.obs_v],
+        done=True, agent_text=final_text,
+    )
+    session.send_state_threadsafe(fin)
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -357,125 +543,60 @@ async def websocket_endpoint(websocket: WebSocket):
             elif msg_type == "set_speed":
                 session.speed = max(0.1, float(msg.get("speed", 3.0)))
 
-            elif msg_type == "start_bayes":
-                session.cancel_active_task()
-                session.mode = "bayes"
+            elif msg_type in ("pause", "stop"):
+                session.paused.set()
+
+            elif msg_type == "resume":
+                if "speed" in msg:
+                    session.speed = max(0.1, float(msg.get("speed", session.speed)))
+                session.paused.clear()
+
+            elif msg_type in ("start_bayes", "start_gemini"):
+                is_bayes = msg_type == "start_bayes"
+                session.mode = "bayes" if is_bayes else "gemini"
                 session.seed = int(msg.get("seed", session.seed))
                 session.speed = max(0.1, float(msg.get("speed", 3.0)))
-                env = session.reset_env(session.seed)
+                env = session.reset_env(session.seed)   # also cancels any running playback
+                session.paused.clear()
+                cancel = session.cancel_event
 
-                init_p = format_state_payload(
-                    env=env,
-                    mode="bayes",
-                    seed=session.seed,
-                    shot=0,
-                    theta_h=[0.0] * 10,
-                    theta_v=[0.0] * 12,
-                    obs_h=[{"ratio": o.ratio, "level": o.level} for o in env._sim.initial_result.obs_h],
-                    obs_v=[{"ratio": o.ratio, "level": o.level} for o in env._sim.initial_result.obs_v],
-                    done=False,
-                )
-                await session.send_state(init_p)
-
-                def run_bayes():
-                    class LiveStreamingEnv(BeamlineEnv):
-                        def set_correctors(self, h, v):
-                            if session.cancel_event.is_set():
-                                raise InterruptedError("Cancelled")
-                            t0 = time.time()
-                            res = super().set_correctors(h, v)
-                            shot_num = self._sim.shots_used
-                            p = format_state_payload(
-                                env=self,
-                                mode="bayes",
-                                seed=session.seed,
-                                shot=shot_num,
-                                theta_h=list(h),
-                                theta_v=list(v),
-                                obs_h=res["h"],
-                                obs_v=res["v"],
-                                done=(shot_num >= 60),
-                            )
-                            session.send_state_threadsafe(p)
-
-                            cur_speed = getattr(session, "speed", 1.0)
-                            target_dt = 1.0 / max(0.1, cur_speed)
-                            elapsed = time.time() - t0
-                            delay = max(0.01, target_dt - elapsed)
-                            time.sleep(delay)
-                            return res
-
-                        def submit(self):
-                            res = super().submit()
-                            last = self._sim.last_result
-                            p = format_state_payload(
-                                env=self,
-                                mode="bayes",
-                                seed=session.seed,
-                                shot=self._sim.shots_used,
-                                theta_h=self._sim.current_theta_h.tolist(),
-                                theta_v=self._sim.current_theta_v.tolist(),
-                                obs_h=[{"ratio": o.ratio, "level": o.level} for o in last.obs_h],
-                                obs_v=[{"ratio": o.ratio, "level": o.level} for o in last.obs_v],
-                                done=True,
-                            )
-                            session.send_state_threadsafe(p)
-                            return res
-
-                    live_env = LiveStreamingEnv(seed=session.seed, budget=60)
-                    session.env = live_env
-
-                    agent = BayesAgent(
-                        n_particles=100_000,
-                        chunk_size=25_000,
-                        roughening=0.2,
-                        seed=session.seed + 1_000_003,
-                    )
-
-                    try:
-                        agent.solve(live_env)
-                    except InterruptedError:
-                        pass
-                    except Exception as ex:
-                        session.send_state_threadsafe({"type": "error", "message": f"Bayes error: {ex}"})
-
-                th = threading.Thread(target=run_bayes, daemon=True)
-                session.active_thread = th
-                th.start()
-
-            elif msg_type == "start_gemini":
-                session.cancel_active_task()
-                session.mode = "gemini"
-                session.seed = int(msg.get("seed", session.seed))
-                session.speed = max(0.1, float(msg.get("speed", 3.0)))
-                trial_num = int(msg.get("trial", 2))
-                env = session.reset_env(session.seed)
-
-                run_file = RUNS_DIR / f"beam-steering-s{session.seed:03d}_{trial_num}.json"
-                if not run_file.exists():
-                    fallback_files = list(RUNS_DIR.glob(f"beam-steering-s{session.seed:03d}_*.json"))
-                    for fb in fallback_files:
-                        if fb != run_file:
+                text_blocks: list[str] = []
+                final_text = ""
+                if is_bayes:
+                    with _bayes_cache_lock:
+                        recorded = _bayes_cache.get(session.seed)
+                    if recorded is not None:
+                        feed = ShotFeed(recorded)
+                    else:
+                        feed = ShotFeed()
+                        threading.Thread(
+                            target=_bayes_producer, args=(session.seed, feed, cancel), daemon=True,
+                        ).start()
+                else:
+                    trial_num = int(msg.get("trial", 2))
+                    run_file = RUNS_DIR / f"beam-steering-s{session.seed:03d}_{trial_num}.json"
+                    if not run_file.exists():
+                        for fb in sorted(RUNS_DIR.glob(f"beam-steering-s{session.seed:03d}_*.json")):
                             run_file = fb
                             break
-
-                if not run_file.exists():
-                    await session.ws.send_text(json.dumps({
-                        "type": "error",
-                        "message": f"No replay file found for seed {session.seed}",
-                    }))
-                    continue
-
-                with open(run_file, "r", encoding="utf-8") as rf:
-                    run_data = json.load(rf)
-
-                shots_data = run_data.get("shots", [])
-                agent_full_text = run_data.get("agent_text", "")
-                text_blocks = [b.strip() for b in agent_full_text.split("\n\n\n\n") if b.strip()]
+                    if not run_file.exists():
+                        await session.ws.send_text(json.dumps({
+                            "type": "error",
+                            "message": f"No replay file found for seed {session.seed}",
+                        }))
+                        continue
+                    with open(run_file, "r", encoding="utf-8") as rf:
+                        run_data = json.load(rf)
+                    feed = ShotFeed([
+                        {"theta_h": s.get("theta_h", [0.0] * 10), "theta_v": s.get("theta_v", [0.0] * 12)}
+                        for s in run_data.get("shots", [])
+                    ])
+                    final_text = run_data.get("agent_text", "")
+                    text_blocks = [b.strip() for b in final_text.split("\n\n\n\n") if b.strip()]
 
                 init_p = format_state_payload(
                     env=env,
-                    mode="gemini",
+                    mode=session.mode,
                     seed=session.seed,
                     shot=0,
                     theta_h=[0.0] * 10,
@@ -487,62 +608,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 )
                 await session.send_state(init_p)
 
-                def run_gemini():
-                    n_shots = len(shots_data)
-                    for idx, s in enumerate(shots_data):
-                        if session.cancel_event.is_set():
-                            break
-                        th_h = s.get("theta_h", [0.0] * 10)
-                        th_v = s.get("theta_v", [0.0] * 12)
-
-                        obs = env.set_correctors(th_h, th_v)
-                        is_last = (idx == n_shots - 1) or (env._sim.shots_used >= 60)
-
-                        text_slice = ""
-                        if text_blocks:
-                            target_count = max(1, int((idx + 1) * len(text_blocks) / n_shots))
-                            text_slice = "\n\n---\n\n".join(text_blocks[:target_count])
-
-                        p = format_state_payload(
-                            env=env,
-                            mode="gemini",
-                            seed=session.seed,
-                            shot=env._sim.shots_used,
-                            theta_h=th_h,
-                            theta_v=th_v,
-                            obs_h=obs["h"],
-                            obs_v=obs["v"],
-                            done=is_last,
-                            agent_text=text_slice,
-                        )
-                        session.send_state_threadsafe(p)
-
-                        if is_last:
-                            break
-
-                        cur_speed = getattr(session, "speed", 2.0)
-                        delay = 1.0 / max(0.1, cur_speed)
-                        time.sleep(delay)
-
-                    if not env._submitted:
-                        env.submit()
-
-                    last = env._sim.last_result
-                    fin_p = format_state_payload(
-                        env=env,
-                        mode="gemini",
-                        seed=session.seed,
-                        shot=env._sim.shots_used,
-                        theta_h=env._sim.current_theta_h.tolist(),
-                        theta_v=env._sim.current_theta_v.tolist(),
-                        obs_h=[{"ratio": o.ratio, "level": o.level} for o in last.obs_h],
-                        obs_v=[{"ratio": o.ratio, "level": o.level} for o in last.obs_v],
-                        done=True,
-                        agent_text=agent_full_text,
-                    )
-                    session.send_state_threadsafe(fin_p)
-
-                th = threading.Thread(target=run_gemini, daemon=True)
+                th = threading.Thread(
+                    target=run_playback,
+                    args=(session, env, session.mode, feed, cancel, text_blocks or None, final_text),
+                    daemon=True,
+                )
                 session.active_thread = th
                 th.start()
 
