@@ -20,6 +20,7 @@
       --green: #2ECC71;        /* Sensor: centred */
       --yellow: #F2C94C;       /* Sensor: off-centre */
       --grey: #55657d;         /* Sensor: no beam */
+      --plate: #C9A7FF;        /* Sensor plate readings */
       --danger: #FF5C5C;       /* Beam lost */
       --gold: #F2C94C;
     }
@@ -154,6 +155,13 @@
     .btn-action:hover { background: #243b61; border-color: #3b5682; }
     .btn-action.btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; }
     .btn-action.btn-accent:hover { background: #e07a22; }
+    .btn-toggle {
+      background: #111f36; color: var(--text-muted); border: 1px solid var(--border);
+      padding: 5px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; cursor: pointer;
+      font-family: inherit; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-toggle:hover { color: var(--text); border-color: #3b5682; }
+    .btn-toggle.on { background: rgba(201, 167, 255, 0.15); color: var(--plate); border-color: var(--plate); }
 
     /* Content Area */
     .content-area {
@@ -173,8 +181,10 @@
     .canvas-header {
       display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 12px; flex-wrap: wrap;
     }
+    .canvas-header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .canvas-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
     .canvas-hint { font-size: 12px; color: var(--text-muted); }
+    .canvas-hint.ai { color: var(--plate); font-weight: 600; }
     canvas {
       width: 100%;
       display: block;
@@ -185,60 +195,67 @@
 
     /* Legend */
     .legend-mini {
-      display: flex; align-items: center; gap: 16px; margin-top: 10px;
+      display: flex; align-items: center; gap: 8px 16px; margin-top: 10px;
       font-size: 12px; color: var(--text-muted); flex-wrap: wrap;
     }
     .legend-item { display: inline-flex; align-items: center; gap: 6px; }
     .lg-tube { width: 20px; height: 10px; background: #17294a; border-top: 2px solid #5d7699; border-bottom: 2px solid #5d7699; }
     .lg-beam { width: 20px; height: 3px; background: #FFB067; box-shadow: 0 0 6px #F2994A; border-radius: 2px; }
-    .lg-ring { width: 8px; height: 15px; border: 2px solid; border-radius: 50%; }
+    .lg-ring { width: 8px; height: 15px; border: 2px solid; border-radius: 50%; position: relative; }
+    .lg-ring.with-dot::after {
+      content: ""; position: absolute; left: 50%; top: 20%; width: 4px; height: 4px; margin-left: -2px;
+      border-radius: 50%; background: #fff;
+    }
     .lg-mag { width: 11px; height: 9px; background: #2b3d5c; border: 1px solid #6f87ab; border-radius: 2px; }
+    .lg-handle { width: 11px; height: 11px; border-radius: 50%; background: #0b1526; border: 2px solid var(--cyan); box-shadow: 0 0 6px var(--cyan); }
     .lg-loss { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 7px var(--danger); }
+    .lg-plates { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
+    .lg-plates i { display: block; width: 5px; background: var(--plate); border-radius: 1px; box-shadow: 0 0 5px var(--plate); }
 
     /* Hover tooltip on the plot */
     .tip {
       position: absolute; pointer-events: none; display: none; z-index: 5;
       background: rgba(9, 18, 32, 0.96); border: 1px solid #33507a; border-radius: 8px;
       padding: 9px 11px; font-size: 12px; line-height: 1.45; color: var(--text);
-      min-width: 190px; max-width: 260px; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+      min-width: 200px; max-width: 270px; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
     }
     .tip-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 4px; }
     .tip-muted { color: var(--text-muted); font-size: 11px; }
-    .tip-row { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 6px; margin: 3px 0; font-size: 11px; color: var(--text-muted); }
+    .tip-row { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 6px; margin: 3px 0; font-size: 11px; color: var(--text-muted); }
     .tip-bar-bg { height: 8px; background: #1a2a44; border-radius: 3px; overflow: hidden; }
-    .tip-bar { height: 100%; border-radius: 3px; }
+    .tip-bar { height: 100%; border-radius: 3px; background: var(--plate); }
 
     /* Magnet Sliders Grid */
     .sliders-card {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 14px 18px;
+      padding: 12px 18px;
     }
     .sliders-grid-12 {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      gap: 10px 16px;
-      margin-top: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 6px 12px;
+      margin-top: 8px;
     }
     .slider-row {
-      display: flex; flex-direction: column; gap: 3px;
+      display: flex; flex-direction: column; gap: 2px;
       background: #111f36; border: 1px solid var(--border);
-      padding: 8px 10px; border-radius: 6px;
+      padding: 5px 8px; border-radius: 6px;
       transition: border-color 0.15s ease;
     }
     .slider-row:hover { border-color: var(--accent); }
     .slider-top {
       display: flex; justify-content: space-between; align-items: center; font-size: 11px;
     }
-    .slider-name { font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; color: #fff; }
-    .slider-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); text-align: right; }
-    .slider-ends { display: flex; justify-content: space-between; font-size: 10px; color: #5f7596; }
+    .slider-name { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 700; color: #fff; }
+    .slider-val { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--cyan); text-align: right; }
     input[type=range] {
-      width: 100%; height: 5px; background: #243b61; border-radius: 3px; outline: none; cursor: pointer; accent-color: var(--accent);
+      width: 100%; height: 4px; background: #243b61; border-radius: 3px; outline: none; cursor: pointer; accent-color: var(--accent);
     }
 
     /* Gemini Reasoning Box */
+    .gemini-note { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
     .gemini-reasoning-box {
       background: #091220;
       border: 1px solid #1a2a44;
@@ -251,7 +268,7 @@
       height: 140px;
       overflow-y: auto;
       white-space: pre-wrap;
-      margin-top: 10px;
+      margin-top: 8px;
     }
 
     /* Collapsible Physicist Box */
@@ -364,20 +381,31 @@
           <span style="color:var(--accent);">&#9654;</span>
           <span id="titleV">Side view: the beam flies left → right through the tube</span>
         </div>
-        <span class="canvas-hint" id="hintV">Push the beam with the magnets so it passes through the middle of every sensor ring.</span>
+        <div class="canvas-header-right">
+          <span class="canvas-hint" id="hintV"></span>
+          <button class="btn-toggle" id="btnAiView" onclick="toggleAiView()">🤖 AI view: off</button>
+        </div>
       </div>
       <canvas id="canvasV"></canvas>
       <div class="tip" id="tipV"></div>
 
-      <div class="legend-mini">
+      <div class="legend-mini" id="legendTrue">
         <span class="legend-item"><span class="lg-tube"></span>beam tube</span>
         <span class="legend-item"><span class="lg-beam"></span>proton beam</span>
         <span class="legend-item"><span class="lg-mag"></span><span style="color:var(--cyan); font-weight:700;">↑</span>magnet and its push</span>
+        <span class="legend-item" id="legendHandle"><span class="lg-handle"></span>drag the arrow tip</span>
         <span class="legend-item"><span class="lg-ring" style="border-color:var(--green);"></span>sensor: centred</span>
         <span class="legend-item"><span class="lg-ring" style="border-color:var(--yellow);"></span>off-centre</span>
         <span class="legend-item"><span class="lg-ring" style="border-color:var(--grey);"></span>no beam arrives</span>
+        <span class="legend-item"><span class="lg-ring with-dot" style="border-color:var(--yellow);"></span>dot inside the ring = beam offset, magnified ×20</span>
         <span class="legend-item"><span class="lg-loss"></span>beam hits the wall</span>
-        <span class="legend-item" style="margin-left:auto;">Hover a sensor or magnet for details</span>
+      </div>
+      <div class="legend-mini" id="legendAi" style="display:none;">
+        <span class="legend-item"><span class="lg-plates"><i style="height:9px"></i><i style="height:5px"></i></span>the two plate readings of each sensor (upper / lower)</span>
+        <span class="legend-item">equal bars = beam centred</span>
+        <span class="legend-item">they jump on every shot: the readings are noisy</span>
+        <span class="legend-item">once the beam is lost, sensors only see noise</span>
+        <span class="legend-item"><span class="lg-handle"></span>you can still drag the magnets</span>
       </div>
     </div>
 
@@ -396,8 +424,8 @@
     <!-- Sliders Card -->
     <div class="sliders-card" id="cardSliders">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-        <span style="font-size:13px; font-weight:700;" id="slidersTitle">12 magnets: each one pushes the beam up or down</span>
-        <span style="font-size:11px; color:var(--text-muted);" id="slidersHint">Move a slider and watch its magnet light up</span>
+        <span style="font-size:13px; font-weight:700;" id="slidersTitle">Magnet strengths (you can also drag the arrows above)</span>
+        <span style="font-size:11px; color:var(--text-muted);" id="slidersHint">+ pushes the beam up, − pushes it down</span>
       </div>
       <div id="slidersGrid" class="sliders-grid-12"></div>
     </div>
@@ -407,6 +435,7 @@
       <div class="canvas-title">
         <span>Gemini Reasoning Transcript</span>
       </div>
+      <div class="gemini-note">Gemini’s numbers use the machine’s sign convention (opposite to the arrows).</div>
       <div id="geminiBox" class="gemini-reasoning-box">Gemini thoughts and actions will stream here during replay...</div>
     </div>
 
@@ -418,7 +447,8 @@
       </div>
       <div id="physicistContent" class="physicist-content" style="display:none;">
         <p><strong>CERN TT20 Transfer Line:</strong> 400 GeV/c slow-extracted proton beam from SPS to North Area target over 900 meters. Uncoupled linear optics with 10 horizontal / 12 vertical corrector dipoles and 11 horizontal / 10 vertical split-foil secondary emission monitors (SEMs). Uniform background noise &nu; = 0.25, Table 1 medium optics randomization. The Bayesian benchmark uses a 100k-particle filter (Adam Štafa CERN report, 2026).</p>
-        <p><strong>Plot:</strong> the tube is the aperture profile a(s) at 5 m checkpoints; the beam is the true closed trajectory x(s) = R(Δθ − gθ) on the perturbed machine (god view, never shown to the agent). Magnet arrows show the commanded push −θ (the hidden offset Δθ is not drawn). Sensor rings are coloured by the true normalised symmetry Ŝ (green ≥ 0.9); the small dot inside each ring is the beam offset magnified to ±1.5σ at the ring edge. Tooltip plate bars are the noisy foil readings I₁ = r·ℓ, I₂ = (1−r)·ℓ.</p>
+        <p><strong>Plot:</strong> the tube is the aperture profile a(s) at 5 m checkpoints; the beam is the true trajectory x(s) = R(Δθ − gθ) on the perturbed machine (god view, never shown to the agent). Magnet arrows show the commanded push −θ (the hidden offset Δθ is not drawn); slider values use the same sign, so they are the negative of the machine's θ that Gemini reasons about. Sensor rings are coloured by the true normalised symmetry Ŝ (green ≥ 0.9). The white dot inside each ring is the true offset x at that monitor, drawn 20× larger than the plot scale (clamped to the ring). The plate bars are the noisy foil readings I₁ = r·ℓ (lower/right foil) and I₂ = (1−r)·ℓ (upper/left foil) — exactly what the agent receives in AI view.</p>
+        <p><strong>Watch the algorithm</strong> replays a precomputed run of the honest reference (BayesAgent, 100k particles, roughening 0.2, agent seed = env seed + 1 000 003, budget 60). Replaying its corrector settings through the same BeamlineEnv(seed) reproduces the run exactly; precomputing lets speed and pause work.</p>
       </div>
     </div>
   </div>
@@ -428,7 +458,7 @@
       tab: "play",
       seed: 0,
       shot: 0,
-      playing: false,
+      run: "idle",           // Watch tabs: idle | playing | paused | done
       done: false,
       theta_v: new Array(12).fill(0),
       theta_h: new Array(10).fill(0),
@@ -440,7 +470,8 @@
       bestCentring: 0.0,
       speed: 3.0,
       agent_text: "",
-      sliderActive: false,   // a Play slider is being dragged
+      aiView: false,         // Play tab: show only what the AI sees
+      sliderActive: false,   // the user is changing a magnet (slider or drag)
       pendingLaunch: false,  // fly the particle once the server confirms the released value
     };
 
@@ -468,20 +499,25 @@
       off: "#F2C94C",
       none: "#55657d",
       dim: "#2a3850",
+      aiRing: "#6f87ab",
+      plate: "#C9A7FF",
       loss: "#FF5C5C",
     };
-    const S_TOTAL = 900;          // beam line length in metres (time axis of the particle)
-    const CENTRED = 0.9;          // gate turns green at this true centring
-    const RING_EDGE_SIGMA = 1.5;  // inner dot: beam offset magnified, ring edge = 1.5 sigma
+    const S_TOTAL = 900;   // beam line length in metres (time axis of the particle)
+    const CENTRED = 0.9;   // gate turns green at this true centring
+    const DOT_MAG = 20;    // white dot inside a ring = beam offset magnified ×20 vs the plot scale
 
     const views = {
-      v: { plane: "v", canvas: null, tip: null, hits: [] },
-      h: { plane: "h", canvas: null, tip: null, hits: [] },
+      v: { plane: "v", canvas: null, tip: null, hits: [], geo: null },
+      h: { plane: "h", canvas: null, tip: null, hits: [], geo: null },
     };
 
-    let anim = null;          // flying particle {t0, full, endS, end, lost}
+    let anim = null;          // flying particle {t0, full, endS, end, lost, reveal}
     const pulses = [];        // magnet highlights {p, j, until, ms}
     let hoverMagnet = null;   // {p, j} while a slider row is hovered
+    let hoverHandle = null;   // index of the arrow tip under the mouse
+    let drag = null;          // {view, j, pointerId} while an arrow tip is dragged
+    let lastReadingT = -1e9;  // time of the last new sensor reading (AI view flash)
     let rafId = null;
 
     /* ------------------------------------------------------------------ */
@@ -504,6 +540,8 @@
         document.getElementById("wsStatus").className = "ws-status";
         document.getElementById("wsStatusText").textContent = "Connected";
         if (wsTimer) { clearTimeout(wsTimer); wsTimer = null; }
+        state.run = "idle";
+        updatePlayButton();
         sendInit();
       };
 
@@ -528,7 +566,7 @@
     }
 
     function sendInit() {
-      sendWS({ type: "init", mode: state.tab, seed: state.seed, speed: 3.0 });
+      sendWS({ type: "init", mode: state.tab, seed: state.seed, speed: state.speed });
     }
 
     function sameArray(a, b) {
@@ -563,6 +601,9 @@
       state.score = data.score || state.score;
       state.god_view = data.god_view || state.god_view;
       if (data.machine_info) state.machine_info = data.machine_info;
+      lastReadingT = performance.now();
+
+      if (state.tab !== "play" && data.done && state.run !== "idle") state.run = "done";
 
       const centringVal = state.tab === "play"
         ? (data.score.centring_v || (data.score.sf * 100))
@@ -580,7 +621,7 @@
         box.scrollTop = box.scrollHeight;
       }
 
-      // Fly the particle: every shot in Watch, and in Play after a change is finished
+      // Fly the particle: every shot in Watch, and in Play once a change is finished
       let launch = !keepLocalTheta;
       if (state.tab === "play" && state.pendingLaunch) {
         launch = sameArray(data.theta_v, state.theta_v);
@@ -589,7 +630,15 @@
       if (launch) launchParticle();
 
       updateUI(centringVal);
+      refreshTips();
       requestFrame();
+    }
+
+    // An open tooltip shows the newest data, not the data from when the mouse arrived
+    function refreshTips() {
+      [views.v, views.h].forEach(v => {
+        if (v.tip && v.tip.style.display === "block" && v.tipHit) showTip(v, v.tipHit, v.tipEvt);
+      });
     }
 
     function updateUI(centringVal) {
@@ -609,16 +658,23 @@
       }
 
       syncSliders();
+      updatePlayButton();
+    }
 
-      if (state.tab !== "play") {
-        document.getElementById("btnPlayPause").textContent = state.playing ? "⏸ Pause" : "▶ Play";
-        document.getElementById("btnPlayPause").className = state.playing ? "btn-action" : "btn-action btn-accent";
-      }
+    function updatePlayButton() {
+      const b = document.getElementById("btnPlayPause");
+      const labels = { idle: "▶ Play", playing: "⏸ Pause", paused: "▶ Resume", done: "↻ Play again" };
+      b.textContent = labels[state.run] || "▶ Play";
+      b.className = state.run === "playing" ? "btn-action" : "btn-action btn-accent";
     }
 
     /* ------------------------------------------------------------------ */
-    /* Sliders: value shown = push on the beam in mrad (+ = up) = −θ        */
+    /* Magnet strength: shown as push on the beam in mrad (+ = up) = −θ    */
     /* ------------------------------------------------------------------ */
+    function thetaMax() {
+      return (state.machine_info && state.machine_info.theta_max) || 0.00045;
+    }
+
     function fmtPush(mrad) {
       const arrow = mrad > 0.004 ? " ↑" : (mrad < -0.004 ? " ↓" : "");
       return (mrad >= 0 ? "+" : "−") + Math.abs(mrad).toFixed(2) + " mrad" + arrow;
@@ -644,12 +700,12 @@
         row.className = "slider-row";
         row.innerHTML = `
           <div class="slider-top">
-            <span class="slider-name">Magnet M${i + 1}</span>
+            <span class="slider-name">M${i + 1}</span>
             <span class="slider-val" id="val_v_${i}">+0.00 mrad</span>
           </div>
           <input type="range" id="sl_v_${i}" min="-0.45" max="0.45" step="0.005" value="0"
+                 aria-label="Magnet M${i + 1} strength (push up/down)"
                  oninput="onSliderMove(${i}, this.value)" onchange="onSliderRelease(${i})">
-          <div class="slider-ends"><span>↓ push down</span><span>push up ↑</span></div>
         `;
         row.addEventListener("mouseenter", () => { hoverMagnet = { p: "v", j: i }; requestFrame(); });
         row.addEventListener("mouseleave", () => { hoverMagnet = null; requestFrame(); });
@@ -674,15 +730,24 @@
       sendFire();
     }
 
+    // Set magnet j's push (mrad, + = up); keeps slider, label and arrow in sync
+    function setPush(j, pushMrad) {
+      const lim = thetaMax() * 1000;
+      const push = Math.max(-lim, Math.min(lim, pushMrad));
+      state.theta_v[j] = -push / 1000;   // the machine's sign convention
+      const sl = document.getElementById(`sl_v_${j}`);
+      if (sl) sl.value = push.toFixed(3);
+      const tx = document.getElementById(`val_v_${j}`);
+      if (tx) tx.textContent = fmtPush(push);
+      pulseMagnet("v", j, 650);
+      queueFire();
+      requestFrame();
+    }
+
     function onSliderMove(index, valueMrad) {
       if (state.tab !== "play") return;
       state.sliderActive = true;
-      const push = parseFloat(valueMrad);
-      state.theta_v[index] = -push / 1000;
-      const text = document.getElementById(`val_v_${index}`);
-      if (text) text.textContent = fmtPush(push);
-      pulseMagnet("v", index, 650);
-      queueFire();
+      setPush(index, parseFloat(valueMrad));
     }
 
     function onSliderRelease(index) {
@@ -703,7 +768,8 @@
 
     function newPuzzle() {
       state.seed = Math.floor(Math.random() * 5);
-      state.playing = false;
+      state.run = "idle";
+      updatePlayButton();
       sendInit();
     }
 
@@ -715,12 +781,51 @@
       sendWS({ type: "set_speed", speed: state.speed });
     }
 
+    function applyTexts() {
+      const t = state.tab, isPlay = t === "play", ai = isAiView();
+      const hint = document.getElementById("hintV");
+      hint.className = ai ? "canvas-hint ai" : "canvas-hint";
+      hint.textContent = isPlay
+        ? (ai ? "This is all the AI sees: noisy sensor readings."
+              : "Drag an arrow tip to set a magnet. Get the beam through the middle of every ring.")
+        : (t === "bayes" ? "Press Play to watch the algorithm's shots. Pause any time."
+                         : "Press Play: replay of a recorded Gemini run. Pause any time.");
+      document.getElementById("titleV").textContent = isPlay
+        ? (ai ? "AI view: what the AI gets after each shot" : "Side view: the beam flies left → right through the tube")
+        : "Side view (up–down)";
+      document.getElementById("btnAiView").style.display = isPlay ? "inline-flex" : "none";
+      const b = document.getElementById("btnAiView");
+      b.textContent = state.aiView ? "🤖 AI view: on" : "🤖 AI view: off";
+      b.className = state.aiView ? "btn-toggle on" : "btn-toggle";
+      document.getElementById("legendTrue").style.display = ai ? "none" : "flex";
+      document.getElementById("legendAi").style.display = ai ? "flex" : "none";
+      document.getElementById("legendHandle").style.display = isPlay ? "inline-flex" : "none";
+      document.getElementById("slidersTitle").textContent = isPlay
+        ? "Magnet strengths (you can also drag the arrows above)"
+        : "The agent's up–down magnet strengths (read only)";
+      document.getElementById("slidersHint").textContent = isPlay
+        ? "+ pushes the beam up, − pushes it down"
+        : "Magnets flash on the plot when the agent changes them";
+    }
+
+    function toggleAiView() {
+      state.aiView = !state.aiView;
+      views.v.tip.style.display = "none";
+      applyTexts();
+      requestFrame();
+    }
+
+    function isAiView() {
+      return state.tab === "play" && state.aiView;
+    }
+
     function switchTab(t) {
       if (state.tab === t) return;
       state.tab = t;
-      state.playing = false;
+      state.run = "idle";
       state.sliderActive = false;
       state.pendingLaunch = false;
+      drag = null;
       views.v.tip.style.display = "none";
       views.h.tip.style.display = "none";
 
@@ -740,37 +845,27 @@
       document.getElementById("btnZero").style.display = isPlay ? "inline-flex" : "none";
       document.getElementById("cardGeminiReasoning").style.display = (t === "gemini") ? "block" : "none";
 
-      document.getElementById("titleV").textContent = isPlay
-        ? "Side view: the beam flies left → right through the tube"
-        : "Side view (up–down)";
-      document.getElementById("hintV").textContent = isPlay
-        ? "Push the beam with the magnets so it passes through the middle of every sensor ring."
-        : (t === "bayes" ? "Press Play: the algorithm fires up to 60 shots." : "Press Play: replay of a recorded Gemini run.");
-      document.getElementById("slidersTitle").textContent = isPlay
-        ? "12 magnets: each one pushes the beam up or down"
-        : "The agent's up–down magnets (read only)";
-      document.getElementById("slidersHint").textContent = isPlay
-        ? "Move a slider and watch its magnet light up"
-        : "Magnets flash when the agent changes them";
-
+      applyTexts();
+      updatePlayButton();
       sizeCanvases();
       sendInit();
     }
 
+    // Same controls for both Watch tabs: Play starts, Pause really pauses the server-side
+    // stepping, Resume continues from the same shot.
     function togglePlayPause() {
-      if (state.playing) {
-        state.playing = false;
-        sendWS({ type: "stop" });
-        updateUI(state.score.centring_all || 0);
+      if (state.tab === "play") return;
+      if (state.run === "playing") {
+        state.run = "paused";
+        sendWS({ type: "pause" });
+      } else if (state.run === "paused") {
+        state.run = "playing";
+        sendWS({ type: "resume", speed: state.speed });
       } else {
-        state.playing = true;
-        updateUI(state.score.centring_all || 0);
-        if (state.tab === "bayes") {
-          sendWS({ type: "start_bayes", seed: state.seed, speed: state.speed });
-        } else if (state.tab === "gemini") {
-          sendWS({ type: "start_gemini", seed: state.seed, speed: state.speed });
-        }
+        state.run = "playing";
+        sendWS({ type: state.tab === "bayes" ? "start_bayes" : "start_gemini", seed: state.seed, speed: state.speed });
       }
+      updatePlayButton();
     }
 
     /* ------------------------------------------------------------------ */
@@ -785,6 +880,7 @@
 
     function magnetGlow(p, j, now) {
       if (hoverMagnet && hoverMagnet.p === p && hoverMagnet.j === j) return 1;
+      if (p === "v" && (hoverHandle === j || (drag && drag.j === j))) return 1;
       const q = pulses.find(q => q.p === p && q.j === j);
       if (!q || q.until <= now) return 0;
       return Math.min(1, (q.until - now) / q.ms);
@@ -813,6 +909,7 @@
 
     function needsFrame(now) {
       if (anim && now < anim.end + 750) return true;
+      if (isAiView() && now - lastReadingT < 400) return true;
       return pulses.some(q => q.until > now);
     }
 
@@ -842,7 +939,7 @@
 
     function sizeCanvases() {
       const play = state.tab === "play";
-      sizeCanvas(views.v, play ? 330 : 240);
+      sizeCanvas(views.v, play ? 340 : 240);
       if (!play) sizeCanvas(views.h, 240);
       requestFrame();
     }
@@ -855,7 +952,7 @@
       const gv = state.god_view || {};
       if (!mi || !mi.s_ap) return null;
       const h = p === "h";
-      return {
+      const d = {
         p,
         sAp: mi.s_ap,
         aAp: h ? mi.a_h_ap : mi.a_v_ap,
@@ -871,7 +968,16 @@
         thMax: mi.theta_max || 0.00045,
         lossS: (gv.is_lost && gv.loss_s !== null && gv.loss_s !== undefined) ? gv.loss_s : null,
         words: h ? ["left", "right"] : ["up", "down"],
+        plateSides: h ? ["right", "left"] : ["lower", "upper"],   // plate 1 (x<0), plate 2 (x>0)
+        otherView: h ? "up–down" : "left–right",
       };
+      // Did the beam hit the wall in THIS plane, or was it lost in the other one?
+      d.lostHere = false;
+      if (d.lossS !== null) {
+        const k = d.sAp.findIndex(s => Math.abs(s - d.lossS) < 1e-6);
+        d.lostHere = k >= 0 && Math.abs(d.xAp[k] || 0) > d.aAp[k];
+      }
+      return d;
     }
 
     function interp(xs, ys, x) {
@@ -930,6 +1036,29 @@
       ctx.closePath();
     }
 
+    // Small text label with a background box, kept inside the canvas
+    function pill(ctx, text, x, y, W, fg, bg, border) {
+      ctx.save();
+      ctx.font = '600 11px "Inter", sans-serif';
+      const tw = ctx.measureText(text).width;
+      const w = tw + 14, h = 20;
+      let bx = x + 12;
+      if (bx + w > W - 4) bx = x - 12 - w;
+      bx = Math.max(4, bx);
+      const by = y - h / 2;
+      roundRect(ctx, bx, by, w, h, 5);
+      ctx.fillStyle = bg;
+      ctx.fill();
+      ctx.strokeStyle = border;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = fg;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, bx + 7, by + h / 2 + 0.5);
+      ctx.restore();
+    }
+
     /* ------------------------------------------------------------------ */
     /* Rendering                                                            */
     /* ------------------------------------------------------------------ */
@@ -937,6 +1066,10 @@
       if (now === undefined) now = performance.now();
       drawView(views.v, now);
       if (state.tab !== "play") drawView(views.h, now);
+    }
+
+    function canDrag(view) {
+      return state.tab === "play" && view.plane === "v";
     }
 
     function drawView(view, now) {
@@ -951,10 +1084,13 @@
       ctx.fillStyle = C.outside;
       ctx.fillRect(0, 0, W, H);
       view.hits = [];
+      view.geo = null;
 
       const d = planeData(view.plane);
       if (!d || !d.sAp.length) return;
 
+      const ai = isAiView();
+      const editable = canDrag(view);
       const compact = H < 300;
       const padL = 46, padR = 18, padT = compact ? 24 : 30, padB = 38;
       const plotW = W - padL - padR;
@@ -963,11 +1099,13 @@
       const aMaxMm = Math.max(...d.aAp) * 1000;
       const yMax = aMaxMm * 1.3;
       const cy = padT + plotH / 2;
+      const pxPerMm = (plotH / 2) / yMax;
       const toX = s => padL + (s / sMax) * plotW;
-      const toY = mm => cy - (mm / yMax) * (plotH / 2);
+      const toY = mm => cy - mm * pxPerMm;
       const aAt = s => interp(d.sAp, d.aAp, s) * 1000;
+      view.geo = { cy, pxPerMm };
 
-      const dotS = (anim && now < anim.end) ? particleS(now) : null;   // null = not flying
+      const dotS = (!ai && anim && now < anim.end) ? particleS(now) : null;   // null = not flying
       const flying = dotS !== null;
       const reveal = flying && anim.reveal;
 
@@ -1025,8 +1163,16 @@
       ctx.fillText(d.words[0] + " ↑", padL - 6, toY(aMaxMm * 0.75) + 3);
       ctx.fillText(d.words[1] + " ↓", padL - 6, toY(-aMaxMm * 0.75) + 3);
 
-      // --- magnets: blocks on the tube + push arrows --------------------------
+      if (ai) {
+        ctx.font = '600 11px "Inter", sans-serif';
+        ctx.textAlign = "left";
+        ctx.fillStyle = C.plate;
+        ctx.fillText("AI view: the true beam is hidden. Only the noisy sensor readings are shown.", padL + 6, 15);
+      }
+
+      // --- magnets: fixed blocks on the tube + push arrows (strength) ----------
       const blockW = 16, blockH = compact ? 11 : 13;
+      const handles = [];
       d.sCorr.forEach((sC, j) => {
         const x = toX(sC);
         const a = aAt(sC);
@@ -1034,13 +1180,13 @@
         const push = -(d.theta[j] || 0);                       // what the knob does to the beam
         const str = Math.min(1, Math.abs(push) / d.thMax);
         const glow = magnetGlow(d.p, j, now);
+        const tipY = str > 0.01 ? toY(Math.sign(push) * str * 0.8 * a) : cy;
 
         // push arrow (under the beam)
         if (str > 0.01) {
-          const lenMm = str * 0.8 * a;
-          const tipY = toY(Math.sign(push) * lenMm);
           const dir = Math.sign(tipY - cy);
-          const head = Math.min(8, Math.abs(tipY - cy) * 0.6);   // small push -> small head
+          const headY = editable ? tipY - dir * 9 : tipY;               // in Play the handle sits on the tip
+          const head = Math.min(8, Math.abs(headY - cy) * 0.6);   // small push -> small head
           ctx.save();
           ctx.strokeStyle = `rgba(${C.push}, ${0.45 + 0.55 * str})`;
           ctx.fillStyle = ctx.strokeStyle;
@@ -1050,23 +1196,25 @@
           ctx.lineCap = "round";
           ctx.beginPath();
           ctx.moveTo(x, cy);
-          ctx.lineTo(x, tipY - dir * head * 0.75);
+          ctx.lineTo(x, editable ? tipY : headY - dir * head * 0.75);
           ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(x, tipY);
-          ctx.lineTo(x - head * 0.62, tipY - dir * head);
-          ctx.lineTo(x + head * 0.62, tipY - dir * head);
-          ctx.closePath();
-          ctx.fill();
+          if (head > 2) {
+            ctx.beginPath();
+            ctx.moveTo(x, headY);
+            ctx.lineTo(x - head * 0.62, headY - dir * head);
+            ctx.lineTo(x + head * 0.62, headY - dir * head);
+            ctx.closePath();
+            ctx.fill();
+          }
           ctx.restore();
-        } else {
+        } else if (!editable) {
           ctx.fillStyle = "#3d5478";
           ctx.beginPath();
           ctx.arc(x, cy, 2.2, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        // yoke blocks above and below the tube
+        // yoke blocks above and below the tube (fixed, never move)
         ctx.save();
         if (glow > 0 || str > 0.3) {
           ctx.shadowColor = glow > 0 ? C.accent : `rgba(${C.push}, 0.8)`;
@@ -1085,20 +1233,25 @@
         ctx.fillText(`M${j + 1}`, x, yT - blockH - 4);
 
         view.hits.push({ type: "magnet", j, x, y1: yT - blockH - 14, y2: yB + blockH + 2 });
+        if (editable) {
+          handles.push({ j, x, y: tipY, push });
+          view.hits.push({ type: "handle", j, x, y: tipY, aMm: a });
+        }
       });
 
       // --- sensor gates (back half, behind the beam) ----------------------------
       const ringRy = compact ? 12 : 15, ringRx = compact ? 4 : 5;
       const gates = d.sSem.map((s, i) => {
         const st = gateState(d, i);
-        const lit = !reveal || s <= dotS;
+        const lit = ai || !reveal || s <= dotS;
         const passT = anim ? anim.t0 + anim.full * s / S_TOTAL : -1;
-        const flash = (anim && st !== "none" && now >= passT && now - passT < 380) ? 1 - (now - passT) / 380 : 0;
-        return { s, i, st, lit, flash, x: toX(s) };
+        const flash = (!ai && anim && st !== "none" && now >= passT && now - passT < 380) ? 1 - (now - passT) / 380 : 0;
+        const col = ai ? C.aiRing : (lit ? gateColour(st) : C.dim);
+        return { s, i, st, lit, flash, col, x: toX(s) };
       });
 
       gates.forEach(g => {
-        ctx.strokeStyle = g.lit ? gateColour(g.st) : C.dim;
+        ctx.strokeStyle = g.col;
         ctx.globalAlpha = g.lit ? 0.55 : 0.8;
         ctx.lineWidth = 2.5;
         ctx.beginPath();
@@ -1107,8 +1260,8 @@
         ctx.globalAlpha = 1;
       });
 
-      // --- the beam ---------------------------------------------------------------
-      const pts = beamPath(d);
+      // --- the beam (hidden in AI view) ------------------------------------------
+      const pts = ai ? [] : beamPath(d);
       const strokePath = (list) => {
         ctx.beginPath();
         list.forEach((q, k) => { const x = toX(q.s), y = toY(q.y); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
@@ -1137,50 +1290,65 @@
         }
       }
 
-      // --- sensor gates (front half + magnified hit dot) -------------------------------
+      // --- sensor gates (front half + magnified hit dot, or plate bars in AI view) ---------
+      const readingFlash = ai ? Math.max(0, 1 - (now - lastReadingT) / 350) : 0;
       gates.forEach(g => {
-        const col = g.lit ? gateColour(g.st) : C.dim;
         ctx.save();
-        if (g.lit && g.st !== "none") {
-          ctx.fillStyle = col;
+        if (!ai && g.lit && g.st !== "none") {
+          ctx.fillStyle = g.col;
           ctx.globalAlpha = 0.10 + 0.25 * g.flash;
           ctx.beginPath();
           ctx.ellipse(g.x, cy, ringRx, ringRy, 0, 0, Math.PI * 2);
           ctx.fill();
           ctx.globalAlpha = 1;
-          ctx.shadowColor = col;
+          ctx.shadowColor = g.col;
           ctx.shadowBlur = 6 + 16 * g.flash;
         }
-        ctx.strokeStyle = col;
+        ctx.strokeStyle = g.col;
         ctx.lineWidth = 2.5;
         ctx.beginPath();
         ctx.ellipse(g.x, cy, ringRx, ringRy, 0, -Math.PI / 2, Math.PI / 2);
         ctx.stroke();
         ctx.restore();
 
-        if (g.flash > 0) {   // expanding ring as the particle passes
-          const k = 1 - g.flash;
-          ctx.strokeStyle = col;
-          ctx.globalAlpha = g.flash;
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.ellipse(g.x, cy, ringRx + 6 * k, ringRy + 10 * k, 0, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.globalAlpha = 1;
-        }
-
-        if (g.lit && g.st !== "none") {   // where the beam crosses this sensor (magnified)
-          const sig = d.sigSem[g.i] || 0.0005;
-          const off = Math.max(-1, Math.min(1, (d.xSem[g.i] || 0) / sig / RING_EDGE_SIGMA));
-          ctx.fillStyle = "#ffffff";
-          ctx.beginPath();
-          ctx.arc(g.x, cy - off * (ringRy - 3), 2, 0, Math.PI * 2);
-          ctx.fill();
+        if (ai) {
+          // What the AI receives: two noisy plate readings per sensor
+          const o = d.obs[g.i] || { ratio: 0.5, level: 0 };
+          const i1 = Math.min(1.6, o.ratio * o.level);         // plate 1: lower side
+          const i2 = Math.min(1.6, (1 - o.ratio) * o.level);   // plate 2: upper side
+          const k = ringRy * 2.4;   // a centred beam (level ≈ 1) gives two bars of ~18 px
+          ctx.save();
+          ctx.fillStyle = C.plate;
+          ctx.shadowColor = C.plate;
+          ctx.shadowBlur = 3 + 12 * readingFlash;
+          ctx.globalAlpha = 0.75 + 0.25 * readingFlash;
+          ctx.fillRect(g.x - 3, cy - 2 - i2 * k, 6, i2 * k);
+          ctx.fillRect(g.x - 3, cy + 2, 6, i1 * k);
+          ctx.restore();
+        } else {
+          if (g.flash > 0) {   // expanding ring as the particle passes
+            const k = 1 - g.flash;
+            ctx.strokeStyle = g.col;
+            ctx.globalAlpha = g.flash;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.ellipse(g.x, cy, ringRx + 6 * k, ringRy + 10 * k, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+          }
+          if (g.lit && g.st !== "none") {   // where the beam crosses this sensor, magnified ×20
+            const lim = ringRy - 3;
+            const off = Math.max(-lim, Math.min(lim, (d.xSem[g.i] || 0) * 1000 * pxPerMm * DOT_MAG));
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(g.x, cy - off, 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
 
         ctx.font = '9px "JetBrains Mono", monospace';
         ctx.textAlign = "center";
-        ctx.fillStyle = g.lit ? (g.st === "none" ? C.label : gateColour(g.st)) : C.dim;
+        ctx.fillStyle = ai ? C.label : (g.lit ? (g.st === "none" ? C.label : gateColour(g.st)) : C.dim);
         ctx.fillText(`S${g.i + 1}`, g.x, padT + plotH + 16);
 
         view.hits.push({ type: "gate", i: g.i, x: g.x, y: cy, ry: ringRy });
@@ -1207,8 +1375,8 @@
         ctx.fill();
       }
 
-      // --- loss point: flash, then a red marker ------------------------------------------
-      if (d.lossS !== null && pts.length > 0 && !flying) {
+      // --- loss point: flash, then a red marker (+ label if lost in the other plane) -------
+      if (!ai && d.lossS !== null && pts.length > 0 && !flying) {
         const last = pts[pts.length - 1];
         const lx = toX(last.s), ly = toY(last.y);
         const since = anim ? now - anim.end : 9999;
@@ -1243,13 +1411,51 @@
         ctx.lineWidth = 1.5;
         ctx.stroke();
         ctx.restore();
+        if (!d.lostHere) {
+          pill(ctx, `lost in the ${d.otherView} view`, lx, ly, W, "#ffc9c9", "rgba(40, 12, 16, 0.9)", "rgba(255, 92, 92, 0.6)");
+        }
+      }
+
+      // --- draggable arrow tips (Play) ------------------------------------------------------
+      handles.forEach(hd => {
+        const active = (drag && drag.j === hd.j) || hoverHandle === hd.j;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(hd.x, hd.y, active ? 7 : 5.5, 0, Math.PI * 2);
+        ctx.fillStyle = active ? `rgb(${C.push})` : "#0b1526";
+        ctx.strokeStyle = `rgb(${C.push})`;
+        ctx.lineWidth = 2;
+        ctx.shadowColor = `rgba(${C.push}, 0.9)`;
+        ctx.shadowBlur = active ? 14 : 5;
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      });
+      if (drag && drag.view === view) {
+        const hd = handles.find(q => q.j === drag.j);
+        if (hd) {
+          const mrad = hd.push * 1000;
+          const word = mrad > 0.004 ? "push up" : (mrad < -0.004 ? "push down" : "off");
+          const txt = `M${hd.j + 1} strength: ${mrad >= 0 ? "+" : "−"}${Math.abs(mrad).toFixed(2)} mrad (${word})`;
+          pill(ctx, txt, hd.x, hd.y, W, "#e6f7fc", "rgba(8, 24, 38, 0.92)", `rgba(${C.push}, 0.7)`);
+        }
       }
     }
 
     /* ------------------------------------------------------------------ */
-    /* Hover tooltips                                                       */
+    /* Pointer: tooltips (hover / tap) and dragging arrow tips              */
     /* ------------------------------------------------------------------ */
-    function findHit(view, mx, my) {
+    function findHit(view, mx, my, pointerType) {
+      if (canDrag(view)) {
+        const r = pointerType === "touch" ? 20 : 11;
+        let best = null, bestD = r;
+        for (const h of view.hits) {
+          if (h.type !== "handle") continue;
+          const dd = Math.hypot(mx - h.x, my - h.y);
+          if (dd <= bestD) { best = h; bestD = dd; }
+        }
+        if (best) return best;
+      }
       for (const h of view.hits) {
         if (h.type === "gate" && Math.abs(mx - h.x) <= 9 && Math.abs(my - h.y) <= h.ry + 8) return h;
       }
@@ -1259,59 +1465,138 @@
       return null;
     }
 
-    function gateTipHtml(d, i) {
+    function fmtMm(mm) {
+      const a = Math.abs(mm);
+      return (a < 1 ? a.toFixed(3) : a.toFixed(2)) + " mm";
+    }
+
+    function plateBars(d, i) {
       const o = d.obs[i] || { ratio: 0.5, level: 0 };
       const p1 = o.ratio * o.level, p2 = (1 - o.ratio) * o.level;
       const m = Math.max(p1, p2, 0.6);
+      return `
+        <div class="tip-row"><span>plate 2 (${d.plateSides[1]})</span><div class="tip-bar-bg"><div class="tip-bar" style="width:${(p2 / m * 100).toFixed(0)}%"></div></div></div>
+        <div class="tip-row"><span>plate 1 (${d.plateSides[0]})</span><div class="tip-bar-bg"><div class="tip-bar" style="width:${(p1 / m * 100).toFixed(0)}%"></div></div></div>
+        <div class="tip-muted">plate 1 / plate 2: equal = centred</div>`;
+    }
+
+    function gateTipHtml(d, i) {
+      const title = `<div class="tip-title">Sensor S${i + 1} <span class="tip-muted">· ${Math.round(d.sSem[i])} m</span></div>`;
+      if (isAiView()) {
+        return title + `<div class="tip-muted" style="margin-bottom:3px;">What the AI gets: two noisy plate readings. It has to work out where the beam is.</div>` + plateBars(d, i);
+      }
       const st = gateState(d, i);
       const xmm = (d.xSem[i] || 0) * 1000;
       const dir = xmm >= 0 ? d.words[0] : d.words[1];
       let status;
       if (st === "none") status = `<span style="color:var(--text-muted)">No beam arrives here. The plates only see noise.</span>`;
       else if (st === "ok") status = `<span style="color:var(--green)">Beam passes centred ✓</span>`;
-      else status = `<span style="color:var(--yellow)">Beam off-centre: ${Math.abs(xmm).toFixed(2)} mm too far ${dir}</span>`;
+      else status = `<span style="color:var(--yellow)">Beam passes off-centre</span>`;
+      const offset = st === "none" ? "" :
+        `<div style="margin-top:2px;">Beam offset here: <b>${fmtMm(xmm)} ${dir}</b> <span class="tip-muted">(green needs about 0.1 mm or less)</span></div>`;
       const centring = st === "none" ? "—" : ((d.sHat[i] || 0) * 100).toFixed(0) + "%";
-      return `
-        <div class="tip-title">Sensor S${i + 1} <span class="tip-muted">· ${Math.round(d.sSem[i])} m</span></div>
-        <div>${status}</div>
-        <div class="tip-row"><span>plate 1</span><div class="tip-bar-bg"><div class="tip-bar" style="width:${(p1 / m * 100).toFixed(0)}%; background:var(--cyan)"></div></div></div>
-        <div class="tip-row"><span>plate 2</span><div class="tip-bar-bg"><div class="tip-bar" style="width:${(p2 / m * 100).toFixed(0)}%; background:var(--green)"></div></div></div>
-        <div class="tip-muted">plate 1 / plate 2: equal = centred (readings are noisy)</div>
-        <div class="tip-muted" style="margin-top:3px;">Centring here: <b style="color:var(--text)">${centring}</b></div>`;
+      return title + `<div>${status}</div>` + offset + plateBars(d, i) +
+        `<div class="tip-muted">plate readings are noisy</div>` +
+        `<div class="tip-muted" style="margin-top:3px;">Centring here: <b style="color:var(--text)">${centring}</b></div>`;
     }
 
     function magnetTipHtml(d, j) {
       const push = -(d.theta[j] || 0) * 1000;
       const dir = push > 0.004 ? d.words[0] : (push < -0.004 ? d.words[1] : null);
       const how = state.tab === "play" && d.p === "v"
-        ? "Change it with slider M" + (j + 1) + " below."
+        ? `Drag its arrow tip up or down, or use slider M${j + 1} below.`
         : "Set by the agent.";
       return `
         <div class="tip-title">Magnet M${j + 1} <span class="tip-muted">· ${Math.round(d.sCorr[j])} m</span></div>
-        <div>${dir ? `Pushes the beam <b>${dir}</b>: ${Math.abs(push).toFixed(2)} mrad` : "Switched off (no push)"}</div>
+        <div>${dir ? `Strength ${Math.abs(push).toFixed(2)} mrad: pushes the beam <b>${dir}</b>` : "Strength 0: no push"}</div>
         <div class="tip-muted" style="margin-top:3px;">The magnet stays in place; only its strength changes. ${how}</div>`;
     }
 
-    function attachTooltip(view) {
-      const c = view.canvas, tip = view.tip;
-      c.addEventListener("mousemove", (e) => {
-        const r = c.getBoundingClientRect();
-        const mx = e.clientX - r.left, my = e.clientY - r.top;
-        const hit = findHit(view, mx, my);
-        const d = planeData(view.plane);
-        if (!hit || !d) { tip.style.display = "none"; c.style.cursor = "default"; return; }
-        tip.innerHTML = hit.type === "gate" ? gateTipHtml(d, hit.i) : magnetTipHtml(d, hit.j);
-        tip.style.display = "block";
-        c.style.cursor = "help";
-        const card = c.parentElement.getBoundingClientRect();
-        let left = e.clientX - card.left + 14;
-        const top = e.clientY - card.top + 14;
-        const tw = tip.offsetWidth;
-        if (left + tw > card.width - 6) left = e.clientX - card.left - tw - 14;
-        tip.style.left = Math.max(6, left) + "px";
-        tip.style.top = top + "px";
+    function showTip(view, hit, e) {
+      const tip = view.tip, c = view.canvas;
+      const d = planeData(view.plane);
+      if (!hit || !d || hit.type === "handle") { tip.style.display = "none"; view.tipHit = null; return; }
+      view.tipHit = hit;
+      view.tipEvt = { clientX: e.clientX, clientY: e.clientY };
+      tip.innerHTML = hit.type === "gate" ? gateTipHtml(d, hit.i) : magnetTipHtml(d, hit.j);
+      tip.style.display = "block";
+      const card = c.parentElement.getBoundingClientRect();
+      let left = e.clientX - card.left + 14;
+      const top = e.clientY - card.top + 14;
+      const tw = tip.offsetWidth;
+      if (left + tw > card.width - 6) left = e.clientX - card.left - tw - 14;
+      tip.style.left = Math.max(6, left) + "px";
+      tip.style.top = top + "px";
+    }
+
+    function applyDrag(view, my) {
+      const g = view.geo;
+      const h = view.hits.find(q => q.type === "handle" && q.j === drag.j);
+      if (!g || !h) return;
+      const mm = (g.cy - my) / g.pxPerMm;                       // pointer height in plot mm
+      let str = Math.max(-1, Math.min(1, mm / (0.8 * h.aMm)));   // arrow length = strength
+      if (Math.abs(str) < 0.03) str = 0;                         // snap to "off" near the centre
+      setPush(drag.j, str * thetaMax() * 1000);
+    }
+
+    function endDrag() {
+      if (!drag) return;
+      drag = null;
+      state.sliderActive = false;
+      state.pendingLaunch = true;
+      flushFire();
+      requestFrame();
+    }
+
+    function attachPointer(view) {
+      const c = view.canvas;
+      const rel = e => { const r = c.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+
+      c.addEventListener("pointerdown", (e) => {
+        const [mx, my] = rel(e);
+        const hit = findHit(view, mx, my, e.pointerType);
+        if (hit && hit.type === "handle") {
+          e.preventDefault();
+          try { c.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+          drag = { view, j: hit.j, pointerId: e.pointerId };
+          state.sliderActive = true;
+          view.tip.style.display = "none";
+          c.style.cursor = "ns-resize";
+          applyDrag(view, my);
+        } else if (e.pointerType !== "mouse") {
+          showTip(view, hit, e);   // tap shows the tooltip on touch screens
+        }
       });
-      c.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+
+      c.addEventListener("pointermove", (e) => {
+        const [mx, my] = rel(e);
+        if (drag && drag.pointerId === e.pointerId) { applyDrag(view, my); return; }
+        if (e.pointerType !== "mouse") return;
+        const hit = findHit(view, mx, my, e.pointerType);
+        const hj = (hit && hit.type === "handle") ? hit.j : null;
+        if (hj !== hoverHandle) { hoverHandle = hj; requestFrame(); }
+        c.style.cursor = hj !== null ? "ns-resize" : "default";   // only the arrow tip is grabbable
+        showTip(view, hit, e);
+      });
+
+      const end = (e) => { if (drag && drag.pointerId === e.pointerId) endDrag(); };
+      c.addEventListener("pointerup", end);
+      c.addEventListener("pointercancel", end);
+      c.addEventListener("lostpointercapture", end);
+      c.addEventListener("pointerleave", (e) => {
+        if (e.pointerType !== "mouse" || drag) return;
+        view.tip.style.display = "none";
+        if (hoverHandle !== null) { hoverHandle = null; requestFrame(); }
+      });
+
+      // Touch: stop the page from scrolling only when the finger starts on an arrow tip
+      c.addEventListener("touchstart", (e) => {
+        if (!canDrag(view) || !e.touches.length) return;
+        const t = e.touches[0];
+        const r = c.getBoundingClientRect();
+        const hit = findHit(view, t.clientX - r.left, t.clientY - r.top, "touch");
+        if (hit && hit.type === "handle") e.preventDefault();
+      }, { passive: false });
     }
 
     /* ------------------------------------------------------------------ */
@@ -1324,9 +1609,10 @@
       views.v.tip = document.getElementById("tipV");
       views.h.canvas = document.getElementById("canvasH");
       views.h.tip = document.getElementById("tipH");
-      attachTooltip(views.v);
-      attachTooltip(views.h);
+      attachPointer(views.v);
+      attachPointer(views.h);
       initSliders();
+      applyTexts();
       sizeCanvases();
       connectWS();
     });
