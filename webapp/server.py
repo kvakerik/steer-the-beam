@@ -97,6 +97,20 @@ PREALIGNED_H = {
 }
 
 
+def true_path_at_checkpoints(env: BeamlineEnv) -> tuple[list[float], list[float]]:
+    """True beam position (m) at every aperture checkpoint, for drawing only.
+
+    Same formula as BeamlineSim._evaluate (x_ap = R_ap @ (Δθ − g·θ), report eq. 1);
+    read-only, so the simulator itself is untouched. Website god-view only.
+    """
+    sim = env._sim
+    kick_h = sim.delta_theta_h - sim.model.h.corrector_gains * sim.current_theta_h
+    kick_v = sim.delta_theta_v - sim.model.v.corrector_gains * sim.current_theta_v
+    x_ap_h = sim.model.h.r_matrix_ap @ kick_h
+    x_ap_v = sim.model.v.r_matrix_ap @ kick_v
+    return [float(x) for x in x_ap_h], [float(x) for x in x_ap_v]
+
+
 def format_state_payload(
     env: BeamlineEnv,
     mode: str,
@@ -115,6 +129,7 @@ def format_state_payload(
     score_details = evaluate_env(env)
     traj = get_env_true_trajectory(env)
     info = env.get_machine_info()
+    x_ap_h, x_ap_v = true_path_at_checkpoints(env)
 
     budget_val = None if sandbox else 60
     shots_rem = None if sandbox else max(0, 60 - env._sim.shots_used)
@@ -154,6 +169,10 @@ def format_state_payload(
             "first_lost_sem_v": traj["first_lost_sem_v"],
             "s_mean": float(traj["s_mean"]),
             "distance_d": float(traj["distance_d"]),
+            "x_ap_h": x_ap_h,
+            "x_ap_v": x_ap_v,
+            "s_hat_h": [float(x) for x in traj["s_hat_h"]],
+            "s_hat_v": [float(x) for x in traj["s_hat_v"]],
         },
         "machine_info": {
             "s_sem_h": info["h"]["s_sem"],

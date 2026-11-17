@@ -16,9 +16,11 @@
       --text: #F4F1EA;
       --text-muted: #8fa2be;
       --accent: #F2994A;       /* Beam orange */
-      --cyan: #5CC8E6;         /* Secondary cyan */
-      --green: #27AE60;        /* Sensor balanced green */
-      --danger: #FF5C5C;       /* Lost beam red */
+      --cyan: #5CC8E6;         /* Magnet push */
+      --green: #2ECC71;        /* Sensor: centred */
+      --yellow: #F2C94C;       /* Sensor: off-centre */
+      --grey: #55657d;         /* Sensor: no beam */
+      --danger: #FF5C5C;       /* Beam lost */
       --gold: #F2C94C;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -166,26 +168,45 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 14px 18px;
+      position: relative;
     }
     .canvas-header {
-      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 12px; flex-wrap: wrap;
     }
     .canvas-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .canvas-hint { font-size: 12px; color: var(--text-muted); }
     canvas {
       width: 100%;
       display: block;
-      background: #091220;
+      background: #060c17;
       border: 1px solid #1a2a44;
       border-radius: 6px;
     }
 
-    /* Minimal Legend: ONLY beam, sensors, lost beam x, pipe wall, magnets */
+    /* Legend */
     .legend-mini {
-      display: flex; align-items: center; gap: 16px; margin-top: 8px;
+      display: flex; align-items: center; gap: 16px; margin-top: 10px;
       font-size: 12px; color: var(--text-muted); flex-wrap: wrap;
     }
-    .legend-item { display: flex; align-items: center; gap: 6px; }
-    .legend-box { width: 12px; height: 8px; border-radius: 2px; }
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .lg-tube { width: 20px; height: 10px; background: #17294a; border-top: 2px solid #5d7699; border-bottom: 2px solid #5d7699; }
+    .lg-beam { width: 20px; height: 3px; background: #FFB067; box-shadow: 0 0 6px #F2994A; border-radius: 2px; }
+    .lg-ring { width: 8px; height: 15px; border: 2px solid; border-radius: 50%; }
+    .lg-mag { width: 11px; height: 9px; background: #2b3d5c; border: 1px solid #6f87ab; border-radius: 2px; }
+    .lg-loss { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 7px var(--danger); }
+
+    /* Hover tooltip on the plot */
+    .tip {
+      position: absolute; pointer-events: none; display: none; z-index: 5;
+      background: rgba(9, 18, 32, 0.96); border: 1px solid #33507a; border-radius: 8px;
+      padding: 9px 11px; font-size: 12px; line-height: 1.45; color: var(--text);
+      min-width: 190px; max-width: 260px; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+    }
+    .tip-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+    .tip-muted { color: var(--text-muted); font-size: 11px; }
+    .tip-row { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 6px; margin: 3px 0; font-size: 11px; color: var(--text-muted); }
+    .tip-bar-bg { height: 8px; background: #1a2a44; border-radius: 3px; overflow: hidden; }
+    .tip-bar { height: 100%; border-radius: 3px; }
 
     /* Magnet Sliders Grid */
     .sliders-card {
@@ -196,20 +217,23 @@
     }
     .sliders-grid-12 {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       gap: 10px 16px;
       margin-top: 10px;
     }
     .slider-row {
-      display: flex; flex-direction: column; gap: 4px;
+      display: flex; flex-direction: column; gap: 3px;
       background: #111f36; border: 1px solid var(--border);
       padding: 8px 10px; border-radius: 6px;
+      transition: border-color 0.15s ease;
     }
+    .slider-row:hover { border-color: var(--accent); }
     .slider-top {
       display: flex; justify-content: space-between; align-items: center; font-size: 11px;
     }
     .slider-name { font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; color: #fff; }
     .slider-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); text-align: right; }
+    .slider-ends { display: flex; justify-content: space-between; font-size: 10px; color: #5f7596; }
     input[type=range] {
       width: 100%; height: 5px; background: #243b61; border-radius: 3px; outline: none; cursor: pointer; accent-color: var(--accent);
     }
@@ -245,6 +269,12 @@
     .physicist-header:hover { background: rgba(255,255,255,0.02); color: var(--text); }
     .physicist-content {
       padding: 12px 16px; font-size: 12px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid var(--border);
+    }
+    .physicist-content p + p { margin-top: 8px; }
+
+    @media (max-width: 640px) {
+      header, .dashboard-cards, .tabs-bar, .sub-bar, .content-area { padding-left: 16px; padding-right: 16px; }
+      .canvas-card, .sliders-card { padding: 12px; }
     }
   </style>
 </head>
@@ -313,7 +343,7 @@
       </div>
     </div>
 
-    <div style="display:flex; align-items:center; gap:8px;">
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
       <div id="speedButtonsGroup" style="display:none; align-items:center; gap:4px; margin-right:4px;">
         <span style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">Speed:</span>
         <button class="btn-action" id="spd1" style="padding:4px 9px; font-size:12px;" onclick="setSpeed(1.0)">1×</button>
@@ -327,42 +357,47 @@
   </div>
 
   <div class="content-area">
-    <!-- Horizontal View: hidden in Play tab, visible in Watch tabs -->
-    <div class="canvas-card" id="cardCanvasH" style="display:none;">
-      <div class="canvas-header">
-        <div class="canvas-title">
-          <span style="color:var(--cyan);">&#9654;</span>
-          <span>Left–Right View (Horizontal Plane)</span>
-        </div>
-      </div>
-      <canvas id="canvasH" width="1000" height="190"></canvas>
-    </div>
-
-    <!-- Vertical View: large in Play tab, standard in Watch tabs -->
+    <!-- Side view (vertical plane): Play and Watch -->
     <div class="canvas-card" id="cardCanvasV">
       <div class="canvas-header">
         <div class="canvas-title">
           <span style="color:var(--accent);">&#9654;</span>
-          <span>Up–Down View (Vertical Plane)</span>
+          <span id="titleV">Side view: the beam flies left → right through the tube</span>
+        </div>
+        <span class="canvas-hint" id="hintV">Push the beam with the magnets so it passes through the middle of every sensor ring.</span>
+      </div>
+      <canvas id="canvasV"></canvas>
+      <div class="tip" id="tipV"></div>
+
+      <div class="legend-mini">
+        <span class="legend-item"><span class="lg-tube"></span>beam tube</span>
+        <span class="legend-item"><span class="lg-beam"></span>proton beam</span>
+        <span class="legend-item"><span class="lg-mag"></span><span style="color:var(--cyan); font-weight:700;">↑</span>magnet and its push</span>
+        <span class="legend-item"><span class="lg-ring" style="border-color:var(--green);"></span>sensor: centred</span>
+        <span class="legend-item"><span class="lg-ring" style="border-color:var(--yellow);"></span>off-centre</span>
+        <span class="legend-item"><span class="lg-ring" style="border-color:var(--grey);"></span>no beam arrives</span>
+        <span class="legend-item"><span class="lg-loss"></span>beam hits the wall</span>
+        <span class="legend-item" style="margin-left:auto;">Hover a sensor or magnet for details</span>
+      </div>
+    </div>
+
+    <!-- Top view (horizontal plane): Watch tabs only -->
+    <div class="canvas-card" id="cardCanvasH" style="display:none;">
+      <div class="canvas-header">
+        <div class="canvas-title">
+          <span style="color:var(--cyan);">&#9654;</span>
+          <span>Top view: the same beam seen from above (left–right)</span>
         </div>
       </div>
-      <canvas id="canvasV" width="1000" height="280"></canvas>
-
-      <!-- Minimal Legend: ONLY beam, sensors, lost beam x, pipe wall, magnets -->
-      <div class="legend-mini">
-        <div class="legend-item"><div class="legend-box" style="background:var(--accent);"></div><span>beam</span></div>
-        <div class="legend-item"><div class="legend-box" style="background:var(--green);"></div><span>sensors</span></div>
-        <div class="legend-item"><span style="color:var(--danger); font-weight:900;">&#10007;</span><span>lost beam</span></div>
-        <div class="legend-item"><div class="legend-box" style="background:var(--danger);"></div><span>pipe wall</span></div>
-        <div class="legend-item"><span style="color:var(--text-muted); font-size:10px;">&#9650;</span><span>magnets</span></div>
-      </div>
+      <canvas id="canvasH"></canvas>
+      <div class="tip" id="tipH"></div>
     </div>
 
     <!-- Sliders Card -->
     <div class="sliders-card" id="cardSliders">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-size:13px; font-weight:700;" id="slidersTitle">12 Aiming Magnets (Up–Down)</span>
-        <span style="font-size:11px; color:var(--text-muted);">Adjust to center the beam live</span>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <span style="font-size:13px; font-weight:700;" id="slidersTitle">12 magnets: each one pushes the beam up or down</span>
+        <span style="font-size:11px; color:var(--text-muted);" id="slidersHint">Move a slider and watch its magnet light up</span>
       </div>
       <div id="slidersGrid" class="sliders-grid-12"></div>
     </div>
@@ -383,6 +418,7 @@
       </div>
       <div id="physicistContent" class="physicist-content" style="display:none;">
         <p><strong>CERN TT20 Transfer Line:</strong> 400 GeV/c slow-extracted proton beam from SPS to North Area target over 900 meters. Uncoupled linear optics with 10 horizontal / 12 vertical corrector dipoles and 11 horizontal / 10 vertical split-foil secondary emission monitors (SEMs). Uniform background noise &nu; = 0.25, Table 1 medium optics randomization. The Bayesian benchmark uses a 100k-particle filter (Adam Štafa CERN report, 2026).</p>
+        <p><strong>Plot:</strong> the tube is the aperture profile a(s) at 5 m checkpoints; the beam is the true closed trajectory x(s) = R(Δθ − gθ) on the perturbed machine (god view, never shown to the agent). Magnet arrows show the commanded push −θ (the hidden offset Δθ is not drawn). Sensor rings are coloured by the true normalised symmetry Ŝ (green ≥ 0.9); the small dot inside each ring is the beam offset magnified to ±1.5σ at the ring edge. Tooltip plate bars are the noisy foil readings I₁ = r·ℓ, I₂ = (1−r)·ℓ.</p>
       </div>
     </div>
   </div>
@@ -403,13 +439,54 @@
       machine_info: null,
       bestCentring: 0.0,
       speed: 3.0,
-      agent_text: ""
+      agent_text: "",
+      sliderActive: false,   // a Play slider is being dragged
+      pendingLaunch: false,  // fly the particle once the server confirms the released value
     };
 
     let ws = null;
     let wsTimer = null;
-    let dragDebounce = null;
 
+    /* ------------------------------------------------------------------ */
+    /* Colours and drawing constants                                       */
+    /* ------------------------------------------------------------------ */
+    const C = {
+      outside: "#060c17",
+      tubeEdgeOuter: "#22324c",
+      tubeEdge: "#5d7699",
+      tubeMid: "#182b4c",
+      tubeSide: "#0c1729",
+      centre: "#2f4a72",
+      label: "#5f7596",
+      beam: "#F2994A",
+      beamCore: "#FFC28A",
+      push: "92, 200, 230",       // rgb of --cyan
+      magnet: "#2b3d5c",
+      magnetEdge: "#6f87ab",
+      accent: "#F2994A",
+      ok: "#2ECC71",
+      off: "#F2C94C",
+      none: "#55657d",
+      dim: "#2a3850",
+      loss: "#FF5C5C",
+    };
+    const S_TOTAL = 900;          // beam line length in metres (time axis of the particle)
+    const CENTRED = 0.9;          // gate turns green at this true centring
+    const RING_EDGE_SIGMA = 1.5;  // inner dot: beam offset magnified, ring edge = 1.5 sigma
+
+    const views = {
+      v: { plane: "v", canvas: null, tip: null, hits: [] },
+      h: { plane: "h", canvas: null, tip: null, hits: [] },
+    };
+
+    let anim = null;          // flying particle {t0, full, endS, end, lost}
+    const pulses = [];        // magnet highlights {p, j, until, ms}
+    let hoverMagnet = null;   // {p, j} while a slider row is hovered
+    let rafId = null;
+
+    /* ------------------------------------------------------------------ */
+    /* WebSocket                                                           */
+    /* ------------------------------------------------------------------ */
     function togglePhysicist() {
       const el = document.getElementById("physicistContent");
       const arr = document.getElementById("physicistArrow");
@@ -433,9 +510,7 @@
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === "state") {
-            handleState(data);
-          }
+          if (data.type === "state") handleState(data);
         } catch (e) {
           console.error(e);
         }
@@ -449,25 +524,40 @@
     }
 
     function sendWS(msg) {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(msg));
-      }
+      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
     }
 
     function sendInit() {
-      sendWS({
-        type: "init",
-        mode: state.tab,
-        seed: state.seed,
-        speed: 3.0
-      });
+      sendWS({ type: "init", mode: state.tab, seed: state.seed, speed: 3.0 });
+    }
+
+    function sameArray(a, b) {
+      if (!a || !b || a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) if (Math.abs(a[i] - b[i]) > 1e-9) return false;
+      return true;
     }
 
     function handleState(data) {
+      const keepLocalTheta = state.tab === "play" && state.sliderActive;
+
+      // Watch tabs: pulse the magnets the agent changed noticeably (> 8 % of max strength)
+      if (state.tab !== "play" && data.shot > 0) {
+        const thMax = (data.machine_info && data.machine_info.theta_max) || 0.00045;
+        const ms = Math.min(500, particleFullMs() * 0.8);
+        [["h", state.theta_h, data.theta_h], ["v", state.theta_v, data.theta_v]].forEach(([p, oldT, newT]) => {
+          if (!oldT || !newT) return;
+          for (let j = 0; j < newT.length; j++) {
+            if (Math.abs((newT[j] || 0) - (oldT[j] || 0)) > 0.08 * thMax) pulseMagnet(p, j, ms);
+          }
+        });
+      }
+
       state.shot = data.shot;
       state.done = data.done;
-      state.theta_v = data.theta_v || state.theta_v;
-      state.theta_h = data.theta_h || state.theta_h;
+      if (!keepLocalTheta) {
+        state.theta_v = data.theta_v || state.theta_v;
+        state.theta_h = data.theta_h || state.theta_h;
+      }
       state.obs_v = data.obs_v || state.obs_v;
       state.obs_h = data.obs_h || state.obs_h;
       state.score = data.score || state.score;
@@ -490,8 +580,16 @@
         box.scrollTop = box.scrollHeight;
       }
 
+      // Fly the particle: every shot in Watch, and in Play after a change is finished
+      let launch = !keepLocalTheta;
+      if (state.tab === "play" && state.pendingLaunch) {
+        launch = sameArray(data.theta_v, state.theta_v);
+        if (launch) state.pendingLaunch = false;
+      }
+      if (launch) launchParticle();
+
       updateUI(centringVal);
-      renderCanvases();
+      requestFrame();
     }
 
     function updateUI(centringVal) {
@@ -500,13 +598,13 @@
 
       const statusEl = document.getElementById("lblLiveStatus");
       if (state.score.is_lost) {
-        statusEl.textContent = `Lost @ ${state.score.loss_s ? state.score.loss_s.toFixed(0) + "m" : "pipe"}`;
+        statusEl.textContent = `Hits the wall @ ${state.score.loss_s ? state.score.loss_s.toFixed(0) + " m" : "pipe"}`;
         statusEl.style.color = "var(--danger)";
       } else if (centringVal >= 95.0) {
         statusEl.textContent = "Goal reached (≥95%)!";
         statusEl.style.color = "var(--gold)";
       } else {
-        statusEl.textContent = "Alive";
+        statusEl.textContent = "Reaches the end";
         statusEl.style.color = "var(--green)";
       }
 
@@ -518,16 +616,23 @@
       }
     }
 
+    /* ------------------------------------------------------------------ */
+    /* Sliders: value shown = push on the beam in mrad (+ = up) = −θ        */
+    /* ------------------------------------------------------------------ */
+    function fmtPush(mrad) {
+      const arrow = mrad > 0.004 ? " ↑" : (mrad < -0.004 ? " ↓" : "");
+      return (mrad >= 0 ? "+" : "−") + Math.abs(mrad).toFixed(2) + " mrad" + arrow;
+    }
+
     function syncSliders() {
       for (let i = 0; i < 12; i++) {
-        const val = state.theta_v[i] || 0;
+        const push = -(state.theta_v[i] || 0) * 1000;
         const slider = document.getElementById(`sl_v_${i}`);
         const text = document.getElementById(`val_v_${i}`);
-        if (slider && text) {
-          slider.value = (val * 1000).toFixed(3);
-          text.textContent = (val * 1000 >= 0 ? "+" : "") + (val * 1000).toFixed(2) + " mrad";
-          slider.disabled = (state.tab !== "play");
-        }
+        if (!slider || !text) continue;
+        if (!(state.tab === "play" && state.sliderActive)) slider.value = push.toFixed(3);
+        text.textContent = fmtPush(push);
+        slider.disabled = (state.tab !== "play");
       }
     }
 
@@ -539,33 +644,61 @@
         row.className = "slider-row";
         row.innerHTML = `
           <div class="slider-top">
-            <span class="slider-name">Magnet V${i+1}</span>
+            <span class="slider-name">Magnet M${i + 1}</span>
             <span class="slider-val" id="val_v_${i}">+0.00 mrad</span>
           </div>
-          <input type="range" id="sl_v_${i}" min="-0.45" max="0.45" step="0.005" value="0" oninput="onSliderMove(${i}, this.value)">
+          <input type="range" id="sl_v_${i}" min="-0.45" max="0.45" step="0.005" value="0"
+                 oninput="onSliderMove(${i}, this.value)" onchange="onSliderRelease(${i})">
+          <div class="slider-ends"><span>↓ push down</span><span>push up ↑</span></div>
         `;
+        row.addEventListener("mouseenter", () => { hoverMagnet = { p: "v", j: i }; requestFrame(); });
+        row.addEventListener("mouseleave", () => { hoverMagnet = null; requestFrame(); });
         grid.appendChild(row);
       }
     }
 
+    let fireTimer = null;
+    let firePending = false;
+    function sendFire() { sendWS({ type: "fire", theta_v: state.theta_v }); }
+    function queueFire() {   // throttle: at most one shot per 60 ms, latest value wins
+      if (fireTimer) { firePending = true; return; }
+      sendFire();
+      fireTimer = setTimeout(() => {
+        fireTimer = null;
+        if (firePending) { firePending = false; queueFire(); }
+      }, 60);
+    }
+    function flushFire() {
+      if (fireTimer) { clearTimeout(fireTimer); fireTimer = null; }
+      firePending = false;
+      sendFire();
+    }
+
     function onSliderMove(index, valueMrad) {
       if (state.tab !== "play") return;
-      const rad = parseFloat(valueMrad) / 1000;
-      state.theta_v[index] = rad;
+      state.sliderActive = true;
+      const push = parseFloat(valueMrad);
+      state.theta_v[index] = -push / 1000;
       const text = document.getElementById(`val_v_${index}`);
-      if (text) text.textContent = (parseFloat(valueMrad) >= 0 ? "+" : "") + parseFloat(valueMrad).toFixed(2) + " mrad";
+      if (text) text.textContent = fmtPush(push);
+      pulseMagnet("v", index, 650);
+      queueFire();
+    }
 
-      if (dragDebounce) clearTimeout(dragDebounce);
-      dragDebounce = setTimeout(() => {
-        sendWS({ type: "fire", theta_v: state.theta_v });
-      }, 100);
+    function onSliderRelease(index) {
+      if (state.tab !== "play") return;
+      state.sliderActive = false;
+      state.pendingLaunch = true;
+      flushFire();
     }
 
     function zeroMagnets() {
       if (state.tab !== "play") return;
-      state.theta_v.fill(0);
+      state.theta_v = new Array(12).fill(0);
+      for (let j = 0; j < 12; j++) pulseMagnet("v", j, 500);
+      state.pendingLaunch = true;
       syncSliders();
-      sendWS({ type: "fire", theta_v: state.theta_v });
+      flushFire();
     }
 
     function newPuzzle() {
@@ -586,6 +719,10 @@
       if (state.tab === t) return;
       state.tab = t;
       state.playing = false;
+      state.sliderActive = false;
+      state.pendingLaunch = false;
+      views.v.tip.style.display = "none";
+      views.h.tip.style.display = "none";
 
       document.getElementById("tabPlay").className = t === "play" ? "tab-btn active" : "tab-btn";
       document.getElementById("tabBayes").className = t === "bayes" ? "tab-btn active" : "tab-btn";
@@ -603,9 +740,20 @@
       document.getElementById("btnZero").style.display = isPlay ? "inline-flex" : "none";
       document.getElementById("cardGeminiReasoning").style.display = (t === "gemini") ? "block" : "none";
 
-      const canvasV = document.getElementById("canvasV");
-      canvasV.height = isPlay ? 280 : 190;
+      document.getElementById("titleV").textContent = isPlay
+        ? "Side view: the beam flies left → right through the tube"
+        : "Side view (up–down)";
+      document.getElementById("hintV").textContent = isPlay
+        ? "Push the beam with the magnets so it passes through the middle of every sensor ring."
+        : (t === "bayes" ? "Press Play: the algorithm fires up to 60 shots." : "Press Play: replay of a recorded Gemini run.");
+      document.getElementById("slidersTitle").textContent = isPlay
+        ? "12 magnets: each one pushes the beam up or down"
+        : "The agent's up–down magnets (read only)";
+      document.getElementById("slidersHint").textContent = isPlay
+        ? "Move a slider and watch its magnet light up"
+        : "Magnets flash when the agent changes them";
 
+      sizeCanvases();
       sendInit();
     }
 
@@ -625,232 +773,562 @@
       }
     }
 
-    function renderCanvases() {
-      if (state.tab !== "play") {
-        renderPlane("canvasH", "h");
-      }
-      renderPlane("canvasV", "v");
+    /* ------------------------------------------------------------------ */
+    /* Animation state                                                      */
+    /* ------------------------------------------------------------------ */
+    function pulseMagnet(p, j, ms) {
+      const until = performance.now() + ms;
+      const ex = pulses.find(q => q.p === p && q.j === j);
+      if (ex) { ex.until = until; ex.ms = ms; } else pulses.push({ p, j, until, ms });
+      requestFrame();
     }
 
-    function renderPlane(canvasId, plane) {
-      const canvas = document.getElementById(canvasId);
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      const w = canvas.width;
-      const h = canvas.height;
+    function magnetGlow(p, j, now) {
+      if (hoverMagnet && hoverMagnet.p === p && hoverMagnet.j === j) return 1;
+      const q = pulses.find(q => q.p === p && q.j === j);
+      if (!q || q.until <= now) return 0;
+      return Math.min(1, (q.until - now) / q.ms);
+    }
 
-      ctx.clearRect(0, 0, w, h);
+    function particleFullMs() {   // time for the dot to cross the whole 900 m
+      if (state.tab === "play") return 1100;
+      return Math.max(140, Math.min(1000, 750 / (state.speed || 1)));
+    }
 
-      const padL = 40;
-      const padR = 20;
-      const padT = 16;
-      const padB = 22;
-      const plotW = w - padL - padR;
-      const plotH = h - padT - padB;
+    function launchParticle() {
+      const gv = state.god_view || {};
+      const lost = !!(gv.is_lost && gv.loss_s !== null && gv.loss_s !== undefined);
+      const endS = lost ? gv.loss_s : S_TOTAL;
+      const full = particleFullMs();
+      const t0 = performance.now();
+      // reveal = faint path ahead of the dot + dim gates; only when the flight is slow enough to see
+      anim = { t0, full, endS, lost, end: t0 + full * endS / S_TOTAL, reveal: full >= 500 };
+      requestFrame();
+    }
 
-      const toX = (s) => padL + (s / 900.0) * plotW;
-      const toY = (yMm) => padT + plotH * (0.5 - yMm / 80.0);
+    function particleS(now) {
+      if (!anim) return null;
+      return Math.min(anim.endS, (now - anim.t0) / anim.full * S_TOTAL);
+    }
 
-      // Background grid lines
-      ctx.strokeStyle = "#172740";
-      ctx.lineWidth = 1;
+    function needsFrame(now) {
+      if (anim && now < anim.end + 750) return true;
+      return pulses.some(q => q.until > now);
+    }
+
+    function requestFrame() {
+      if (!rafId) rafId = requestAnimationFrame(frame);
+    }
+
+    function frame() {
+      rafId = null;
+      const now = performance.now();
+      renderCanvases(now);
+      if (needsFrame(now)) requestFrame();
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Canvas sizing (sharp on HiDPI)                                       */
+    /* ------------------------------------------------------------------ */
+    function sizeCanvas(view, cssH) {
+      const c = view.canvas;
+      const w = c.clientWidth;
+      if (!w) return;
+      const dpr = window.devicePixelRatio || 1;
+      c.style.height = cssH + "px";
+      c.width = Math.round(w * dpr);
+      c.height = Math.round(cssH * dpr);
+    }
+
+    function sizeCanvases() {
+      const play = state.tab === "play";
+      sizeCanvas(views.v, play ? 330 : 240);
+      if (!play) sizeCanvas(views.h, 240);
+      requestFrame();
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Plot data and helpers                                                */
+    /* ------------------------------------------------------------------ */
+    function planeData(p) {
+      const mi = state.machine_info;
+      const gv = state.god_view || {};
+      if (!mi || !mi.s_ap) return null;
+      const h = p === "h";
+      return {
+        p,
+        sAp: mi.s_ap,
+        aAp: h ? mi.a_h_ap : mi.a_v_ap,
+        xAp: (h ? gv.x_ap_h : gv.x_ap_v) || [],
+        sSem: h ? mi.s_sem_h : mi.s_sem_v,
+        xSem: (h ? gv.x_sem_h : gv.x_sem_v) || [],
+        sigSem: h ? mi.sigma_sem_h : mi.sigma_sem_v,
+        sHat: (h ? gv.s_hat_h : gv.s_hat_v) || [],
+        firstLost: h ? gv.first_lost_sem_h : gv.first_lost_sem_v,
+        obs: (h ? state.obs_h : state.obs_v) || [],
+        sCorr: h ? mi.s_corr_h : mi.s_corr_v,
+        theta: (h ? state.theta_h : state.theta_v) || [],
+        thMax: mi.theta_max || 0.00045,
+        lossS: (gv.is_lost && gv.loss_s !== null && gv.loss_s !== undefined) ? gv.loss_s : null,
+        words: h ? ["left", "right"] : ["up", "down"],
+      };
+    }
+
+    function interp(xs, ys, x) {
+      if (!xs.length) return 0;
+      if (x <= xs[0]) return ys[0];
+      for (let k = 1; k < xs.length; k++) {
+        if (x <= xs[k]) {
+          const f = (x - xs[k - 1]) / ((xs[k] - xs[k - 1]) || 1);
+          return ys[k - 1] + f * (ys[k] - ys[k - 1]);
+        }
+      }
+      return ys[ys.length - 1];
+    }
+
+    // Beam path in mm, cut at the loss point and clamped to the wall there
+    function beamPath(d) {
+      const pts = [];
+      for (let k = 0; k < d.sAp.length && k < d.xAp.length; k++) {
+        const s = d.sAp[k];
+        if (d.lossS !== null && s > d.lossS + 1e-6) break;
+        let y = d.xAp[k] * 1000;
+        if (d.lossS !== null && Math.abs(s - d.lossS) < 1e-6) {
+          const a = d.aAp[k] * 1000;
+          y = Math.max(-a, Math.min(a, y));
+        }
+        pts.push({ s, y });
+      }
+      return pts;
+    }
+
+    function pathY(pts, s) {
+      return interp(pts.map(q => q.s), pts.map(q => q.y), s);
+    }
+
+    function gateState(d, i) {
+      const reached = !(d.firstLost !== null && d.firstLost !== undefined && i >= d.firstLost);
+      if (!reached) return "none";
+      return (d.sHat[i] || 0) >= CENTRED ? "ok" : "off";
+    }
+
+    function gateColour(st) {
+      return st === "ok" ? C.ok : (st === "off" ? C.off : C.none);
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Rendering                                                            */
+    /* ------------------------------------------------------------------ */
+    function renderCanvases(now) {
+      if (now === undefined) now = performance.now();
+      drawView(views.v, now);
+      if (state.tab !== "play") drawView(views.h, now);
+    }
+
+    function drawView(view, now) {
+      const c = view.canvas;
+      if (!c || !c.width) return;
+      const ctx = c.getContext("2d");
+      const dpr = window.devicePixelRatio || 1;
+      const W = c.width / dpr;
+      const H = c.height / dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = C.outside;
+      ctx.fillRect(0, 0, W, H);
+      view.hits = [];
+
+      const d = planeData(view.plane);
+      if (!d || !d.sAp.length) return;
+
+      const compact = H < 300;
+      const padL = 46, padR = 18, padT = compact ? 24 : 30, padB = 38;
+      const plotW = W - padL - padR;
+      const plotH = H - padT - padB;
+      const sMax = d.sAp[d.sAp.length - 1] || S_TOTAL;
+      const aMaxMm = Math.max(...d.aAp) * 1000;
+      const yMax = aMaxMm * 1.3;
+      const cy = padT + plotH / 2;
+      const toX = s => padL + (s / sMax) * plotW;
+      const toY = mm => cy - (mm / yMax) * (plotH / 2);
+      const aAt = s => interp(d.sAp, d.aAp, s) * 1000;
+
+      const dotS = (anim && now < anim.end) ? particleS(now) : null;   // null = not flying
+      const flying = dotS !== null;
+      const reveal = flying && anim.reveal;
+
+      // --- distance scale --------------------------------------------------
       ctx.font = '9px "JetBrains Mono", monospace';
-      ctx.fillStyle = "#6d84a3";
-
-      for (let s = 0; s <= 900; s += 100) {
+      ctx.textAlign = "center";
+      ctx.fillStyle = C.label;
+      ctx.strokeStyle = "#16233a";
+      ctx.lineWidth = 1;
+      for (let s = 0; s <= sMax + 1e-6; s += 100) {
         const x = toX(s);
         ctx.beginPath();
-        ctx.moveTo(x, padT);
-        ctx.lineTo(x, padT + plotH);
+        ctx.moveTo(x, padT + plotH + 2);
+        ctx.lineTo(x, padT + plotH + 6);
         ctx.stroke();
+        ctx.fillText(`${s} m`, x, H - 5);
+      }
+
+      // --- tube --------------------------------------------------------------
+      ctx.beginPath();
+      d.sAp.forEach((s, k) => { const x = toX(s), y = toY(d.aAp[k] * 1000); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      for (let k = d.sAp.length - 1; k >= 0; k--) ctx.lineTo(toX(d.sAp[k]), toY(-d.aAp[k] * 1000));
+      ctx.closePath();
+      const tg = ctx.createLinearGradient(0, toY(aMaxMm), 0, toY(-aMaxMm));
+      tg.addColorStop(0, C.tubeSide);
+      tg.addColorStop(0.5, C.tubeMid);
+      tg.addColorStop(1, C.tubeSide);
+      ctx.fillStyle = tg;
+      ctx.fill();
+
+      [1, -1].forEach(sign => {
+        const wall = () => {
+          ctx.beginPath();
+          d.sAp.forEach((s, k) => { const x = toX(s), y = toY(sign * d.aAp[k] * 1000); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+        };
+        wall(); ctx.strokeStyle = C.tubeEdgeOuter; ctx.lineWidth = 5; ctx.stroke();
+        wall(); ctx.strokeStyle = C.tubeEdge; ctx.lineWidth = 1.5; ctx.stroke();
+      });
+
+      // ideal path (tube centre)
+      ctx.save();
+      ctx.setLineDash([4, 6]);
+      ctx.strokeStyle = C.centre;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(toX(0), cy);
+      ctx.lineTo(toX(sMax), cy);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.font = '9px "JetBrains Mono", monospace';
+      ctx.textAlign = "right";
+      ctx.fillStyle = C.label;
+      ctx.fillText("centre", padL - 6, cy + 3);
+      ctx.fillText(d.words[0] + " ↑", padL - 6, toY(aMaxMm * 0.75) + 3);
+      ctx.fillText(d.words[1] + " ↓", padL - 6, toY(-aMaxMm * 0.75) + 3);
+
+      // --- magnets: blocks on the tube + push arrows --------------------------
+      const blockW = 16, blockH = compact ? 11 : 13;
+      d.sCorr.forEach((sC, j) => {
+        const x = toX(sC);
+        const a = aAt(sC);
+        const yT = toY(a), yB = toY(-a);
+        const push = -(d.theta[j] || 0);                       // what the knob does to the beam
+        const str = Math.min(1, Math.abs(push) / d.thMax);
+        const glow = magnetGlow(d.p, j, now);
+
+        // push arrow (under the beam)
+        if (str > 0.01) {
+          const lenMm = str * 0.8 * a;
+          const tipY = toY(Math.sign(push) * lenMm);
+          const dir = Math.sign(tipY - cy);
+          const head = Math.min(8, Math.abs(tipY - cy) * 0.6);   // small push -> small head
+          ctx.save();
+          ctx.strokeStyle = `rgba(${C.push}, ${0.45 + 0.55 * str})`;
+          ctx.fillStyle = ctx.strokeStyle;
+          ctx.shadowColor = `rgba(${C.push}, 0.9)`;
+          ctx.shadowBlur = 3 + 14 * str + 8 * glow;
+          ctx.lineWidth = 2 + 1.5 * str;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(x, cy);
+          ctx.lineTo(x, tipY - dir * head * 0.75);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(x, tipY);
+          ctx.lineTo(x - head * 0.62, tipY - dir * head);
+          ctx.lineTo(x + head * 0.62, tipY - dir * head);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        } else {
+          ctx.fillStyle = "#3d5478";
+          ctx.beginPath();
+          ctx.arc(x, cy, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // yoke blocks above and below the tube
+        ctx.save();
+        if (glow > 0 || str > 0.3) {
+          ctx.shadowColor = glow > 0 ? C.accent : `rgba(${C.push}, 0.8)`;
+          ctx.shadowBlur = 6 + 14 * Math.max(glow, (str - 0.3) * 1.4);
+        }
+        ctx.fillStyle = glow > 0 ? "#4a3a2a" : C.magnet;
+        ctx.strokeStyle = glow > 0 ? C.accent : C.magnetEdge;
+        ctx.lineWidth = glow > 0 ? 1.6 : 1;
+        roundRect(ctx, x - blockW / 2, yT - blockH, blockW, blockH + 2, 2.5); ctx.fill(); ctx.stroke();
+        roundRect(ctx, x - blockW / 2, yB - 2, blockW, blockH + 2, 2.5); ctx.fill(); ctx.stroke();
+        ctx.restore();
+
+        ctx.font = '9px "JetBrains Mono", monospace';
         ctx.textAlign = "center";
-        ctx.fillText(`${s}m`, x, h - 6);
-      }
+        ctx.fillStyle = glow > 0 ? C.accent : C.label;
+        ctx.fillText(`M${j + 1}`, x, yT - blockH - 4);
 
-      for (let y = -30; y <= 30; y += 15) {
-        const py = toY(y);
+        view.hits.push({ type: "magnet", j, x, y1: yT - blockH - 14, y2: yB + blockH + 2 });
+      });
+
+      // --- sensor gates (back half, behind the beam) ----------------------------
+      const ringRy = compact ? 12 : 15, ringRx = compact ? 4 : 5;
+      const gates = d.sSem.map((s, i) => {
+        const st = gateState(d, i);
+        const lit = !reveal || s <= dotS;
+        const passT = anim ? anim.t0 + anim.full * s / S_TOTAL : -1;
+        const flash = (anim && st !== "none" && now >= passT && now - passT < 380) ? 1 - (now - passT) / 380 : 0;
+        return { s, i, st, lit, flash, x: toX(s) };
+      });
+
+      gates.forEach(g => {
+        ctx.strokeStyle = g.lit ? gateColour(g.st) : C.dim;
+        ctx.globalAlpha = g.lit ? 0.55 : 0.8;
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.moveTo(padL, py);
-        ctx.lineTo(padL + plotW, py);
+        ctx.ellipse(g.x, cy, ringRx, ringRy, 0, Math.PI / 2, Math.PI * 1.5);
         ctx.stroke();
-        ctx.textAlign = "right";
-        ctx.fillText(`${y > 0 ? "+" : ""}${y}`, padL - 5, py + 3);
-      }
+        ctx.globalAlpha = 1;
+      });
 
-      // Pipe wall outline
-      const minfo = state.machine_info;
-      const sAp = minfo ? minfo.s_ap : [];
-      const aAp = minfo ? (plane === "h" ? minfo.a_h_ap : minfo.a_v_ap) : [];
-
-      if (sAp.length > 0 && aAp.length > 0) {
-        ctx.strokeStyle = "#FF5C5C";
-        ctx.lineWidth = 1.6;
-
+      // --- the beam ---------------------------------------------------------------
+      const pts = beamPath(d);
+      const strokePath = (list) => {
         ctx.beginPath();
-        for (let i = 0; i < sAp.length; i++) {
-          const x = toX(sAp[i]);
-          const y = toY(aAp[i] * 1000);
-          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        list.forEach((q, k) => { const x = toX(q.s), y = toY(q.y); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      };
+      const drawBeam = (list, alpha) => {
+        if (list.length < 2) return;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.lineJoin = "round";
+        ctx.shadowColor = C.beam;
+        ctx.shadowBlur = 12;
+        strokePath(list); ctx.strokeStyle = "rgba(242, 153, 74, 0.35)"; ctx.lineWidth = 7; ctx.stroke();
+        ctx.shadowBlur = 0;
+        strokePath(list); ctx.strokeStyle = C.beamCore; ctx.lineWidth = 2; ctx.stroke();
+        ctx.restore();
+      };
+
+      if (pts.length > 1) {
+        if (reveal) {
+          drawBeam(pts, 0.16);   // the path ahead, faint
+          const done = pts.filter(q => q.s <= dotS);
+          done.push({ s: dotS, y: pathY(pts, dotS) });
+          drawBeam(done, 1);
+        } else {
+          drawBeam(pts, 1);
         }
-        ctx.stroke();
-
-        ctx.beginPath();
-        for (let i = 0; i < sAp.length; i++) {
-          const x = toX(sAp[i]);
-          const y = toY(-aAp[i] * 1000);
-          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
       }
 
-      // Magnets
-      const sCorr = minfo ? (plane === "h" ? minfo.s_corr_h : minfo.s_corr_v) : [];
-      ctx.fillStyle = "#8fa2be";
-      for (let j = 0; j < sCorr.length; j++) {
-        const cx = toX(sCorr[j]);
+      // --- sensor gates (front half + magnified hit dot) -------------------------------
+      gates.forEach(g => {
+        const col = g.lit ? gateColour(g.st) : C.dim;
+        ctx.save();
+        if (g.lit && g.st !== "none") {
+          ctx.fillStyle = col;
+          ctx.globalAlpha = 0.10 + 0.25 * g.flash;
+          ctx.beginPath();
+          ctx.ellipse(g.x, cy, ringRx, ringRy, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          ctx.shadowColor = col;
+          ctx.shadowBlur = 6 + 16 * g.flash;
+        }
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.moveTo(cx, padT + 2);
-        ctx.lineTo(cx - 3, padT - 6);
-        ctx.lineTo(cx + 3, padT - 6);
-        ctx.closePath();
+        ctx.ellipse(g.x, cy, ringRx, ringRy, 0, -Math.PI / 2, Math.PI / 2);
+        ctx.stroke();
+        ctx.restore();
+
+        if (g.flash > 0) {   // expanding ring as the particle passes
+          const k = 1 - g.flash;
+          ctx.strokeStyle = col;
+          ctx.globalAlpha = g.flash;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.ellipse(g.x, cy, ringRx + 6 * k, ringRy + 10 * k, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+
+        if (g.lit && g.st !== "none") {   // where the beam crosses this sensor (magnified)
+          const sig = d.sigSem[g.i] || 0.0005;
+          const off = Math.max(-1, Math.min(1, (d.xSem[g.i] || 0) / sig / RING_EDGE_SIGMA));
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(g.x, cy - off * (ringRy - 3), 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.font = '9px "JetBrains Mono", monospace';
+        ctx.textAlign = "center";
+        ctx.fillStyle = g.lit ? (g.st === "none" ? C.label : gateColour(g.st)) : C.dim;
+        ctx.fillText(`S${g.i + 1}`, g.x, padT + plotH + 16);
+
+        view.hits.push({ type: "gate", i: g.i, x: g.x, y: cy, ry: ringRy });
+      });
+
+      // --- flying particle -------------------------------------------------------------
+      if (flying && pts.length > 1) {
+        for (let k = 10; k >= 1; k--) {   // short fading trail
+          const s = dotS - k * 7;
+          if (s < 0) continue;
+          ctx.fillStyle = `rgba(255, 210, 160, ${0.45 * (1 - k / 11)})`;
+          ctx.beginPath();
+          ctx.arc(toX(s), toY(pathY(pts, s)), 3.2 - k * 0.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        const px = toX(dotS), py = toY(pathY(pts, dotS));
+        const rg = ctx.createRadialGradient(px, py, 0, px, py, 13);
+        rg.addColorStop(0, "rgba(255, 255, 255, 1)");
+        rg.addColorStop(0.3, "rgba(255, 210, 150, 0.85)");
+        rg.addColorStop(1, "rgba(242, 153, 74, 0)");
+        ctx.fillStyle = rg;
+        ctx.beginPath();
+        ctx.arc(px, py, 13, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // Sensors with foil readings
-      const sSem = minfo ? (plane === "h" ? minfo.s_sem_h : minfo.s_sem_v) : [];
-      const obsList = plane === "h" ? state.obs_h : state.obs_v;
-      const firstLost = plane === "h" ? state.god_view.first_lost_sem_h : state.god_view.first_lost_sem_v;
-
-      for (let i = 0; i < sSem.length; i++) {
-        const mx = toX(sSem[i]);
-        const obs = obsList[i] || { ratio: 0.5, level: 0 };
-        const isLostHere = (firstLost !== null && firstLost !== undefined && i >= firstLost);
-
-        ctx.strokeStyle = "#263b5c";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(mx, padT + 4);
-        ctx.lineTo(mx, padT + plotH - 4);
-        ctx.stroke();
-
-        const r = obs.ratio;
-        const l = Math.min(1.5, obs.level);
-        const i1 = r * l;
-        const i2 = (1.0 - r) * l;
-
-        const maxBarH = 26;
-        const bar1H = Math.min(maxBarH, i1 * maxBarH);
-        const bar2H = Math.min(maxBarH, i2 * maxBarH);
-        const y0 = toY(0);
-
-        if (!isLostHere) {
-          ctx.fillStyle = "#5CC8E6";
-          ctx.fillRect(mx - 4, y0, 3, bar1H);
-          ctx.fillStyle = "#27AE60";
-          ctx.fillRect(mx + 1, y0 - bar2H, 3, bar2H);
-        }
-
-        if (isLostHere) {
-          ctx.strokeStyle = "#FF5C5C";
-          ctx.lineWidth = 2.5;
+      // --- loss point: flash, then a red marker ------------------------------------------
+      if (d.lossS !== null && pts.length > 0 && !flying) {
+        const last = pts[pts.length - 1];
+        const lx = toX(last.s), ly = toY(last.y);
+        const since = anim ? now - anim.end : 9999;
+        if (since >= 0 && since < 700) {
+          const k = since / 700;
+          ctx.save();
+          ctx.strokeStyle = C.loss;
+          ctx.globalAlpha = 1 - k;
+          ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.moveTo(mx - 5, y0 - 7);
-          ctx.lineTo(mx + 5, y0 + 7);
-          ctx.moveTo(mx - 5, y0 + 7);
-          ctx.lineTo(mx + 5, y0 - 7);
+          ctx.arc(lx, ly, 5 + 28 * k, 0, Math.PI * 2);
           ctx.stroke();
-        }
-
-        ctx.fillStyle = isLostHere ? "#FF5C5C" : "#8fa2be";
-        ctx.font = '8px "JetBrains Mono", monospace';
-        ctx.textAlign = "center";
-        ctx.fillText(`S${i+1}`, mx, padT + plotH + 11);
-      }
-
-      // Beam trajectory:
-      // Always drawn continuously after every shot in all tabs!
-      if (state.god_view.x_sem_h && state.god_view.x_sem_h.length > 0) {
-        const xSem = plane === "h" ? state.god_view.x_sem_h : state.god_view.x_sem_v;
-        const sigSem = minfo ? (plane === "h" ? minfo.sigma_sem_h : minfo.sigma_sem_v) : [];
-        const isBeamLost = state.god_view.is_lost;
-        const lossS = state.god_view.loss_s;
-
-        const points = [];
-        points.push({ s: 0, x: 0, sig: (sigSem[0] || 0.001) * 1000 });
-
-        for (let i = 0; i < sSem.length; i++) {
-          if (isBeamLost && lossS && sSem[i] > lossS) break;
-          points.push({ s: sSem[i], x: xSem[i] * 1000, sig: (sigSem[i] || 0.001) * 1000 });
-        }
-
-        if (isBeamLost && lossS) {
-          const aLoss = plane === "h" ? (minfo ? minfo.a_h_ap[0]*1000 : 25) : 25;
-          points.push({ s: lossS, x: (xSem[0] >= 0 ? aLoss : -aLoss), sig: 1.5 });
-        }
-
-        if (points.length > 1) {
-          ctx.fillStyle = "rgba(242, 153, 74, 0.22)";
-          ctx.beginPath();
-          for (let i = 0; i < points.length; i++) {
-            const px = toX(points[i].s);
-            const py = toY(points[i].x + 3 * points[i].sig);
-            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-          }
-          for (let i = points.length - 1; i >= 0; i--) {
-            const px = toX(points[i].s);
-            const py = toY(points[i].x - 3 * points[i].sig);
-            ctx.lineTo(px, py);
-          }
-          ctx.closePath();
-          ctx.fill();
-
-          ctx.strokeStyle = "#F2994A";
-          ctx.lineWidth = 2.2;
-          ctx.beginPath();
-          for (let i = 0; i < points.length; i++) {
-            const px = toX(points[i].s);
-            const py = toY(points[i].x);
-            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-          }
-          ctx.stroke();
-
-          if (isBeamLost && lossS) {
-            const lx = toX(lossS);
-            const ly = toY(points[points.length - 1].x);
-            ctx.fillStyle = "#FF5C5C";
+          for (let n = 0; n < 8; n++) {   // sparks
+            const ang = n * Math.PI / 4 + 0.3;
+            const r1 = 6 + 10 * k, r2 = r1 + 7;
             ctx.beginPath();
-            ctx.arc(lx, ly, 5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = "#fff";
-            ctx.lineWidth = 1.5;
+            ctx.moveTo(lx + Math.cos(ang) * r1, ly + Math.sin(ang) * r1);
+            ctx.lineTo(lx + Math.cos(ang) * r2, ly + Math.sin(ang) * r2);
             ctx.stroke();
           }
+          ctx.restore();
         }
+        ctx.save();
+        ctx.fillStyle = C.loss;
+        ctx.shadowColor = C.loss;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(lx, ly, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.restore();
       }
     }
 
-    window.addEventListener("resize", () => {
-      const c1 = document.getElementById("canvasH");
-      const c2 = document.getElementById("canvasV");
-      if (c1 && c2 && c2.parentElement) {
-        const w = c2.parentElement.clientWidth - 36;
-        c1.width = w;
-        c2.width = w;
-        renderCanvases();
+    /* ------------------------------------------------------------------ */
+    /* Hover tooltips                                                       */
+    /* ------------------------------------------------------------------ */
+    function findHit(view, mx, my) {
+      for (const h of view.hits) {
+        if (h.type === "gate" && Math.abs(mx - h.x) <= 9 && Math.abs(my - h.y) <= h.ry + 8) return h;
       }
-    });
+      for (const h of view.hits) {
+        if (h.type === "magnet" && Math.abs(mx - h.x) <= 10 && my >= h.y1 && my <= h.y2) return h;
+      }
+      return null;
+    }
+
+    function gateTipHtml(d, i) {
+      const o = d.obs[i] || { ratio: 0.5, level: 0 };
+      const p1 = o.ratio * o.level, p2 = (1 - o.ratio) * o.level;
+      const m = Math.max(p1, p2, 0.6);
+      const st = gateState(d, i);
+      const xmm = (d.xSem[i] || 0) * 1000;
+      const dir = xmm >= 0 ? d.words[0] : d.words[1];
+      let status;
+      if (st === "none") status = `<span style="color:var(--text-muted)">No beam arrives here. The plates only see noise.</span>`;
+      else if (st === "ok") status = `<span style="color:var(--green)">Beam passes centred ✓</span>`;
+      else status = `<span style="color:var(--yellow)">Beam off-centre: ${Math.abs(xmm).toFixed(2)} mm too far ${dir}</span>`;
+      const centring = st === "none" ? "—" : ((d.sHat[i] || 0) * 100).toFixed(0) + "%";
+      return `
+        <div class="tip-title">Sensor S${i + 1} <span class="tip-muted">· ${Math.round(d.sSem[i])} m</span></div>
+        <div>${status}</div>
+        <div class="tip-row"><span>plate 1</span><div class="tip-bar-bg"><div class="tip-bar" style="width:${(p1 / m * 100).toFixed(0)}%; background:var(--cyan)"></div></div></div>
+        <div class="tip-row"><span>plate 2</span><div class="tip-bar-bg"><div class="tip-bar" style="width:${(p2 / m * 100).toFixed(0)}%; background:var(--green)"></div></div></div>
+        <div class="tip-muted">plate 1 / plate 2: equal = centred (readings are noisy)</div>
+        <div class="tip-muted" style="margin-top:3px;">Centring here: <b style="color:var(--text)">${centring}</b></div>`;
+    }
+
+    function magnetTipHtml(d, j) {
+      const push = -(d.theta[j] || 0) * 1000;
+      const dir = push > 0.004 ? d.words[0] : (push < -0.004 ? d.words[1] : null);
+      const how = state.tab === "play" && d.p === "v"
+        ? "Change it with slider M" + (j + 1) + " below."
+        : "Set by the agent.";
+      return `
+        <div class="tip-title">Magnet M${j + 1} <span class="tip-muted">· ${Math.round(d.sCorr[j])} m</span></div>
+        <div>${dir ? `Pushes the beam <b>${dir}</b>: ${Math.abs(push).toFixed(2)} mrad` : "Switched off (no push)"}</div>
+        <div class="tip-muted" style="margin-top:3px;">The magnet stays in place; only its strength changes. ${how}</div>`;
+    }
+
+    function attachTooltip(view) {
+      const c = view.canvas, tip = view.tip;
+      c.addEventListener("mousemove", (e) => {
+        const r = c.getBoundingClientRect();
+        const mx = e.clientX - r.left, my = e.clientY - r.top;
+        const hit = findHit(view, mx, my);
+        const d = planeData(view.plane);
+        if (!hit || !d) { tip.style.display = "none"; c.style.cursor = "default"; return; }
+        tip.innerHTML = hit.type === "gate" ? gateTipHtml(d, hit.i) : magnetTipHtml(d, hit.j);
+        tip.style.display = "block";
+        c.style.cursor = "help";
+        const card = c.parentElement.getBoundingClientRect();
+        let left = e.clientX - card.left + 14;
+        const top = e.clientY - card.top + 14;
+        const tw = tip.offsetWidth;
+        if (left + tw > card.width - 6) left = e.clientX - card.left - tw - 14;
+        tip.style.left = Math.max(6, left) + "px";
+        tip.style.top = top + "px";
+      });
+      c.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Boot                                                                 */
+    /* ------------------------------------------------------------------ */
+    window.addEventListener("resize", sizeCanvases);
 
     window.addEventListener("DOMContentLoaded", () => {
+      views.v.canvas = document.getElementById("canvasV");
+      views.v.tip = document.getElementById("tipV");
+      views.h.canvas = document.getElementById("canvasH");
+      views.h.tip = document.getElementById("tipH");
+      attachTooltip(views.v);
+      attachTooltip(views.h);
       initSliders();
-      const c1 = document.getElementById("canvasH");
-      const c2 = document.getElementById("canvasV");
-      if (c1 && c2 && c2.parentElement) {
-        const w = c2.parentElement.clientWidth - 36;
-        c1.width = w;
-        c2.width = w;
-      }
+      sizeCanvases();
       connectWS();
-      renderCanvases();
     });
   </script>
 </body>
