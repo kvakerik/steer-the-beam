@@ -10,13 +10,15 @@ Steering the CERN TT20 Transfer Line"* (2026), see `docs/tt20_report.md`.
 
 ## Live Interactive Demo
 
-Try the live interactive demo deployed publicly on Modal:
-👉 **[https://kvakerik--tt20-beam-steering-webapp-fastapi-app.us-east.modal.run](https://kvakerik--tt20-beam-steering-webapp-fastapi-app.us-east.modal.run)**
+Try the live interactive demo, deployed publicly on Modal:
 
-- **Human Mode:** Move the 22 corrector dipole sliders, fire shots, and try to thread and center the proton beam.
-- **Bayes Mode:** Watch the live honest reference particle filter (`BayesAgent`, 100,000 particles) solve the line in real time against `BeamlineEnv(seed)`.
-- **Gemini Replay:** Replay recorded OpenCode + Gemini 3.8 Flash benchmark episodes with synchronized reasoning trace transcript in the side panel.
-- **God View:** Toggle to inspect the true beam trajectory $\pm 3\sigma$ and collision loss points (revealed at game end or on toggle).
+- 👉 **v2 (redesigned for non-physicists):** [https://kvakerik--steer-the-beam-v2-fastapi-app.us-east.modal.run](https://kvakerik--steer-the-beam-v2-fastapi-app.us-east.modal.run)
+- **v1 (version submitted at Junction 2026):** [https://kvakerik--tt20-beam-steering-webapp-fastapi-app.us-east.modal.run](https://kvakerik--tt20-beam-steering-webapp-fastapi-app.us-east.modal.run)
+
+- **Play:** drag the 12 up–down magnets on the plot (or use the sliders) to thread the proton beam through the centre of every sensor. The **AI view** toggle hides the beam and shows only the noisy sensor readings the agent gets.
+- **Watch the algorithm:** replay of recorded honest Bayes runs (seeds 0–4): the reference `BayesAgent` (100,000 particles, roughening 0.2, independent agent seed), recorded with `python -m webapp.record_bayes` and replayed through the same `BeamlineEnv(seed)`, which reproduces each run exactly.
+- **Watch Gemini:** replay of recorded OpenCode + Gemini 3.8 Flash benchmark episodes with the reasoning transcript.
+- Both Watch tabs have 1×/3×/10× speed and Pause/Resume. The plots show the true beam (god view), which the agents never see.
 
 Run locally:
 ```bash

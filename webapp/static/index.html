@@ -202,12 +202,16 @@
     .lg-tube { width: 20px; height: 10px; background: #17294a; border-top: 2px solid #5d7699; border-bottom: 2px solid #5d7699; }
     .lg-beam { width: 20px; height: 3px; background: #FFB067; box-shadow: 0 0 6px #F2994A; border-radius: 2px; }
     .lg-ring { width: 8px; height: 15px; border: 2px solid; border-radius: 50%; position: relative; }
+    .lg-ring.with-dot::before {
+      content: ""; position: absolute; left: 50%; top: 50%; width: 3px; height: 6px; margin: -3px 0 0 -1.5px;
+      border: 1px solid rgba(255, 255, 255, 0.45); border-radius: 50%;
+    }
     .lg-ring.with-dot::after {
-      content: ""; position: absolute; left: 50%; top: 20%; width: 4px; height: 4px; margin-left: -2px;
+      content: ""; position: absolute; left: 50%; top: 0; width: 4px; height: 4px; margin-left: -2px;
       border-radius: 50%; background: #fff;
     }
     .lg-mag { width: 11px; height: 9px; background: #2b3d5c; border: 1px solid #6f87ab; border-radius: 2px; }
-    .lg-handle { width: 11px; height: 11px; border-radius: 50%; background: #0b1526; border: 2px solid var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+    .lg-drag { color: var(--cyan); font-weight: 700; font-size: 14px; line-height: 1; }
     .lg-loss { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 7px var(--danger); }
     .lg-plates { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
     .lg-plates i { display: block; width: 5px; background: var(--plate); border-radius: 1px; box-shadow: 0 0 5px var(--plate); }
@@ -234,24 +238,25 @@
     }
     .sliders-grid-12 {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-      gap: 6px 12px;
-      margin-top: 8px;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 8px 14px;
+      margin-top: 10px;
     }
     .slider-row {
-      display: flex; flex-direction: column; gap: 2px;
+      display: flex; flex-direction: column; gap: 4px;
       background: #111f36; border: 1px solid var(--border);
-      padding: 5px 8px; border-radius: 6px;
+      padding: 8px 10px; border-radius: 6px;
       transition: border-color 0.15s ease;
     }
     .slider-row:hover { border-color: var(--accent); }
     .slider-top {
       display: flex; justify-content: space-between; align-items: center; font-size: 11px;
     }
-    .slider-name { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 700; color: #fff; }
-    .slider-val { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--cyan); text-align: right; }
+    .slider-name { font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; color: #fff; }
+    .slider-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); text-align: right; }
+    .slider-ends { display: flex; justify-content: space-between; font-size: 10px; color: #5f7596; }
     input[type=range] {
-      width: 100%; height: 4px; background: #243b61; border-radius: 3px; outline: none; cursor: pointer; accent-color: var(--accent);
+      width: 100%; height: 5px; background: #243b61; border-radius: 3px; outline: none; cursor: pointer; accent-color: var(--accent);
     }
 
     /* Gemini Reasoning Box */
@@ -346,7 +351,7 @@
   <!-- Sub-bar Controls -->
   <div class="sub-bar">
     <div class="kpi-row">
-      <div class="kpi-badge">
+      <div class="kpi-badge" id="kpiCentring">
         <span class="label">Centring</span>
         <span id="lblLiveCentring" style="color:var(--gold);">0.0%</span>
       </div>
@@ -354,7 +359,7 @@
         <span class="label">Shot</span>
         <span id="lblLiveShot">0 / 60</span>
       </div>
-      <div class="kpi-badge">
+      <div class="kpi-badge" id="kpiBeam">
         <span class="label">Beam</span>
         <span id="lblLiveStatus" style="color:var(--green);">Alive</span>
       </div>
@@ -393,11 +398,11 @@
         <span class="legend-item"><span class="lg-tube"></span>beam tube</span>
         <span class="legend-item"><span class="lg-beam"></span>proton beam</span>
         <span class="legend-item"><span class="lg-mag"></span><span style="color:var(--cyan); font-weight:700;">↑</span>magnet and its push</span>
-        <span class="legend-item" id="legendHandle"><span class="lg-handle"></span>drag the arrow tip</span>
+        <span class="legend-item" id="legendHandle"><span class="lg-drag">↕</span>drag a magnet up or down</span>
         <span class="legend-item"><span class="lg-ring" style="border-color:var(--green);"></span>sensor: centred</span>
         <span class="legend-item"><span class="lg-ring" style="border-color:var(--yellow);"></span>off-centre</span>
         <span class="legend-item"><span class="lg-ring" style="border-color:var(--grey);"></span>no beam arrives</span>
-        <span class="legend-item"><span class="lg-ring with-dot" style="border-color:var(--yellow);"></span>dot inside the ring = beam offset, magnified ×20</span>
+        <span class="legend-item"><span class="lg-ring with-dot" style="border-color:var(--yellow);"></span>white dot = where the beam crosses the sensor, zoomed to the beam's width: inside the small circle = centred</span>
         <span class="legend-item"><span class="lg-loss"></span>beam hits the wall</span>
       </div>
       <div class="legend-mini" id="legendAi" style="display:none;">
@@ -405,7 +410,7 @@
         <span class="legend-item">equal bars = beam centred</span>
         <span class="legend-item">they jump on every shot: the readings are noisy</span>
         <span class="legend-item">once the beam is lost, sensors only see noise</span>
-        <span class="legend-item"><span class="lg-handle"></span>you can still drag the magnets</span>
+        <span class="legend-item"><span class="lg-drag">↕</span>you can still drag the magnets</span>
       </div>
     </div>
 
@@ -424,7 +429,7 @@
     <!-- Sliders Card -->
     <div class="sliders-card" id="cardSliders">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-        <span style="font-size:13px; font-weight:700;" id="slidersTitle">Magnet strengths (you can also drag the arrows above)</span>
+        <span style="font-size:13px; font-weight:700;" id="slidersTitle">Magnet strengths (or drag the magnets on the plot)</span>
         <span style="font-size:11px; color:var(--text-muted);" id="slidersHint">+ pushes the beam up, − pushes it down</span>
       </div>
       <div id="slidersGrid" class="sliders-grid-12"></div>
@@ -447,7 +452,7 @@
       </div>
       <div id="physicistContent" class="physicist-content" style="display:none;">
         <p><strong>CERN TT20 Transfer Line:</strong> 400 GeV/c slow-extracted proton beam from SPS to North Area target over 900 meters. Uncoupled linear optics with 10 horizontal / 12 vertical corrector dipoles and 11 horizontal / 10 vertical split-foil secondary emission monitors (SEMs). Uniform background noise &nu; = 0.25, Table 1 medium optics randomization. The Bayesian benchmark uses a 100k-particle filter (Adam Štafa CERN report, 2026).</p>
-        <p><strong>Plot:</strong> the tube is the aperture profile a(s) at 5 m checkpoints; the beam is the true trajectory x(s) = R(Δθ − gθ) on the perturbed machine (god view, never shown to the agent). Magnet arrows show the commanded push −θ (the hidden offset Δθ is not drawn); slider values use the same sign, so they are the negative of the machine's θ that Gemini reasons about. Sensor rings are coloured by the true normalised symmetry Ŝ (green ≥ 0.9). The white dot inside each ring is the true offset x at that monitor, drawn 20× larger than the plot scale (clamped to the ring). The plate bars are the noisy foil readings I₁ = r·ℓ (lower/right foil) and I₂ = (1−r)·ℓ (upper/left foil) — exactly what the agent receives in AI view.</p>
+        <p><strong>Plot:</strong> the tube is the aperture profile a(s) at 5 m checkpoints; the beam is the true trajectory x(s) = R(Δθ − gθ) on the perturbed machine (god view, never shown to the agent). Magnet arrows show the commanded push −θ (the hidden offset Δθ is not drawn); slider values use the same sign, so they are the negative of the machine's θ that Gemini reasons about. The Centring % badge is the mean true normalised symmetry Ŝ. The white dot inside each ring is the true offset x/σ at that monitor (nominal σ), with the ring edge at 0.5σ and the faint inner circle at 0.25σ; the ring is green when |x| &lt; 0.25σ (≈ Ŝ 0.90 for these foils, about 11σ long), so dot and colour come from the same number. A hollow dot means the offset is beyond the ring edge. The plate bars are the noisy foil readings I₁ = r·ℓ (lower/right foil) and I₂ = (1−r)·ℓ (upper/left foil) — exactly what the agent receives in AI view.</p>
         <p><strong>Watch the algorithm</strong> replays a precomputed run of the honest reference (BayesAgent, 100k particles, roughening 0.2, agent seed = env seed + 1 000 003, budget 60). Replaying its corrector settings through the same BeamlineEnv(seed) reproduces the run exactly; precomputing lets speed and pause work.</p>
       </div>
     </div>
@@ -504,8 +509,10 @@
       loss: "#FF5C5C",
     };
     const S_TOTAL = 900;   // beam line length in metres (time axis of the particle)
-    const CENTRED = 0.9;   // gate turns green at this true centring
-    const DOT_MAG = 20;    // white dot inside a ring = beam offset magnified ×20 vs the plot scale
+    // Sensor rings: the white dot is the beam offset in units of the beam width σ.
+    // Ring edge = 0.5 σ; inner circle (green zone) = 0.25 σ, which is ≈ Ŝ 0.90 for these foils.
+    const RING_SIGMA = 0.5;
+    const CENTRED_SIGMA = 0.25;
 
     const views = {
       v: { plane: "v", canvas: null, tip: null, hits: [], geo: null },
@@ -515,8 +522,8 @@
     let anim = null;          // flying particle {t0, full, endS, end, lost, reveal}
     const pulses = [];        // magnet highlights {p, j, until, ms}
     let hoverMagnet = null;   // {p, j} while a slider row is hovered
-    let hoverHandle = null;   // index of the arrow tip under the mouse
-    let drag = null;          // {view, j, pointerId} while an arrow tip is dragged
+    let hoverCol = null;      // Play: magnet whose column is under the mouse
+    let drag = null;          // {view, j, pointerId, y0, str0, aMm, moved} while a magnet is dragged
     let lastReadingT = -1e9;  // time of the last new sensor reading (AI view flash)
     let rafId = null;
 
@@ -700,12 +707,13 @@
         row.className = "slider-row";
         row.innerHTML = `
           <div class="slider-top">
-            <span class="slider-name">M${i + 1}</span>
+            <span class="slider-name">Magnet M${i + 1}</span>
             <span class="slider-val" id="val_v_${i}">+0.00 mrad</span>
           </div>
           <input type="range" id="sl_v_${i}" min="-0.45" max="0.45" step="0.005" value="0"
                  aria-label="Magnet M${i + 1} strength (push up/down)"
                  oninput="onSliderMove(${i}, this.value)" onchange="onSliderRelease(${i})">
+          <div class="slider-ends"><span>↓ push down</span><span>push up ↑</span></div>
         `;
         row.addEventListener("mouseenter", () => { hoverMagnet = { p: "v", j: i }; requestFrame(); });
         row.addEventListener("mouseleave", () => { hoverMagnet = null; requestFrame(); });
@@ -787,7 +795,7 @@
       hint.className = ai ? "canvas-hint ai" : "canvas-hint";
       hint.textContent = isPlay
         ? (ai ? "This is all the AI sees: noisy sensor readings."
-              : "Drag an arrow tip to set a magnet. Get the beam through the middle of every ring.")
+              : "Drag a magnet up or down to change its push. Get the beam through the middle of every ring.")
         : (t === "bayes" ? "Press Play to watch the algorithm's shots. Pause any time."
                          : "Press Play: replay of a recorded Gemini run. Pause any time.");
       document.getElementById("titleV").textContent = isPlay
@@ -800,8 +808,10 @@
       document.getElementById("legendTrue").style.display = ai ? "none" : "flex";
       document.getElementById("legendAi").style.display = ai ? "flex" : "none";
       document.getElementById("legendHandle").style.display = isPlay ? "inline-flex" : "none";
+      document.getElementById("kpiCentring").style.display = ai ? "none" : "inline-flex";   // they reveal the true beam
+      document.getElementById("kpiBeam").style.display = ai ? "none" : "inline-flex";
       document.getElementById("slidersTitle").textContent = isPlay
-        ? "Magnet strengths (you can also drag the arrows above)"
+        ? "Magnet strengths (or drag the magnets on the plot)"
         : "The agent's up–down magnet strengths (read only)";
       document.getElementById("slidersHint").textContent = isPlay
         ? "+ pushes the beam up, − pushes it down"
@@ -879,8 +889,9 @@
     }
 
     function magnetGlow(p, j, now) {
-      if (hoverMagnet && hoverMagnet.p === p && hoverMagnet.j === j) return 1;
-      if (p === "v" && (hoverHandle === j || (drag && drag.j === j))) return 1;
+      if (p === "v" && drag && drag.j === j) return 1;
+      if (hoverMagnet && hoverMagnet.p === p && hoverMagnet.j === j) return 0.7;
+      if (p === "v" && hoverCol === j && state.tab === "play") return 0.45;   // soft hover highlight
       const q = pulses.find(q => q.p === p && q.j === j);
       if (!q || q.until <= now) return 0;
       return Math.min(1, (q.until - now) / q.ms);
@@ -970,6 +981,7 @@
         words: h ? ["left", "right"] : ["up", "down"],
         plateSides: h ? ["right", "left"] : ["lower", "upper"],   // plate 1 (x<0), plate 2 (x>0)
         otherView: h ? "up–down" : "left–right",
+        otherWall: h ? "top or bottom" : "side",
       };
       // Did the beam hit the wall in THIS plane, or was it lost in the other one?
       d.lostHere = false;
@@ -1012,10 +1024,16 @@
       return interp(pts.map(q => q.s), pts.map(q => q.y), s);
     }
 
+    // Beam offset at sensor i in units of the beam width σ
+    function offsetSigma(d, i) {
+      return (d.xSem[i] || 0) / (d.sigSem[i] || 0.0005);
+    }
+
+    // Colour comes from the same offset as the white dot: inside the inner circle = centred
     function gateState(d, i) {
       const reached = !(d.firstLost !== null && d.firstLost !== undefined && i >= d.firstLost);
       if (!reached) return "none";
-      return (d.sHat[i] || 0) >= CENTRED ? "ok" : "off";
+      return Math.abs(offsetSigma(d, i)) < CENTRED_SIGMA ? "ok" : "off";
     }
 
     function gateColour(st) {
@@ -1172,57 +1190,67 @@
 
       // --- magnets: fixed blocks on the tube + push arrows (strength) ----------
       const blockW = 16, blockH = compact ? 11 : 13;
-      const handles = [];
-      d.sCorr.forEach((sC, j) => {
-        const x = toX(sC);
-        const a = aAt(sC);
+      const mags = d.sCorr.map((sC, j) => ({ j, x: toX(sC), a: aAt(sC) }));
+      // the magnet being dragged, or hovered (Play only)
+      const active = (drag && drag.view === view) ? drag.j : (editable ? hoverCol : null);
+      mags.forEach((m, j) => {
+        const { x, a } = m;
         const yT = toY(a), yB = toY(-a);
         const push = -(d.theta[j] || 0);                       // what the knob does to the beam
         const str = Math.min(1, Math.abs(push) / d.thMax);
         const glow = magnetGlow(d.p, j, now);
-        const tipY = str > 0.01 ? toY(Math.sign(push) * str * 0.8 * a) : cy;
+        const tipY = toY(Math.sign(push) * str * 0.8 * a);
+        m.push = push;
+        m.tipY = str > 0.01 ? tipY : cy;
 
-        // push arrow (under the beam)
+        // faint dashed guide when a switched-off magnet is hovered or dragged
+        if (active === j && str <= 0.01) {
+          ctx.save();
+          ctx.setLineDash([3, 4]);
+          ctx.strokeStyle = `rgba(${C.push}, 0.45)`;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(x, toY(0.8 * a));
+          ctx.lineTo(x, toY(-0.8 * a));
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // clean push arrow (under the beam); no arrow for a magnet at 0
         if (str > 0.01) {
           const dir = Math.sign(tipY - cy);
-          const headY = editable ? tipY - dir * 9 : tipY;               // in Play the handle sits on the tip
-          const head = Math.min(8, Math.abs(headY - cy) * 0.6);   // small push -> small head
+          const head = Math.min(8, Math.abs(tipY - cy) * 0.6);   // small push -> small head
           ctx.save();
-          ctx.strokeStyle = `rgba(${C.push}, ${0.45 + 0.55 * str})`;
+          ctx.strokeStyle = `rgba(${C.push}, ${Math.min(1, 0.45 + 0.55 * str + 0.25 * glow)})`;
           ctx.fillStyle = ctx.strokeStyle;
           ctx.shadowColor = `rgba(${C.push}, 0.9)`;
-          ctx.shadowBlur = 3 + 14 * str + 8 * glow;
-          ctx.lineWidth = 2 + 1.5 * str;
+          ctx.shadowBlur = 3 + 14 * str + 10 * glow;
+          ctx.lineWidth = 2 + 1.5 * str + 0.8 * glow;
           ctx.lineCap = "round";
           ctx.beginPath();
           ctx.moveTo(x, cy);
-          ctx.lineTo(x, editable ? tipY : headY - dir * head * 0.75);
+          ctx.lineTo(x, tipY - dir * head * 0.75);
           ctx.stroke();
           if (head > 2) {
             ctx.beginPath();
-            ctx.moveTo(x, headY);
-            ctx.lineTo(x - head * 0.62, headY - dir * head);
-            ctx.lineTo(x + head * 0.62, headY - dir * head);
+            ctx.moveTo(x, tipY);
+            ctx.lineTo(x - head * 0.62, tipY - dir * head);
+            ctx.lineTo(x + head * 0.62, tipY - dir * head);
             ctx.closePath();
             ctx.fill();
           }
           ctx.restore();
-        } else if (!editable) {
-          ctx.fillStyle = "#3d5478";
-          ctx.beginPath();
-          ctx.arc(x, cy, 2.2, 0, Math.PI * 2);
-          ctx.fill();
         }
 
         // yoke blocks above and below the tube (fixed, never move)
         ctx.save();
         if (glow > 0 || str > 0.3) {
           ctx.shadowColor = glow > 0 ? C.accent : `rgba(${C.push}, 0.8)`;
-          ctx.shadowBlur = 6 + 14 * Math.max(glow, (str - 0.3) * 1.4);
+          ctx.shadowBlur = 4 + 12 * Math.max(glow, (str - 0.3) * 1.4);
         }
-        ctx.fillStyle = glow > 0 ? "#4a3a2a" : C.magnet;
-        ctx.strokeStyle = glow > 0 ? C.accent : C.magnetEdge;
-        ctx.lineWidth = glow > 0 ? 1.6 : 1;
+        ctx.fillStyle = C.magnet;
+        ctx.strokeStyle = glow > 0 ? `rgba(242, 153, 74, ${0.4 + 0.6 * glow})` : C.magnetEdge;
+        ctx.lineWidth = 1 + 0.6 * glow;
         roundRect(ctx, x - blockW / 2, yT - blockH, blockW, blockH + 2, 2.5); ctx.fill(); ctx.stroke();
         roundRect(ctx, x - blockW / 2, yB - 2, blockW, blockH + 2, 2.5); ctx.fill(); ctx.stroke();
         ctx.restore();
@@ -1230,13 +1258,17 @@
         ctx.font = '9px "JetBrains Mono", monospace';
         ctx.textAlign = "center";
         ctx.fillStyle = glow > 0 ? C.accent : C.label;
-        ctx.fillText(`M${j + 1}`, x, yT - blockH - 4);
+        const crowded = j > 0 && x - mags[j - 1].x < 24;   // close pair (narrow screens): label below instead
+        ctx.fillText(`M${j + 1}`, x, crowded ? yB + blockH + 11 : yT - blockH - 4);
 
-        view.hits.push({ type: "magnet", j, x, y1: yT - blockH - 14, y2: yB + blockH + 2 });
         if (editable) {
-          handles.push({ j, x, y: tipY, push });
-          view.hits.push({ type: "handle", j, x, y: tipY, aMm: a });
+          // invisible drag zone: the magnet's whole column, never overlapping its neighbours
+          const prev = j > 0 ? mags[j - 1].x : -Infinity;
+          const next = j < mags.length - 1 ? mags[j + 1].x : Infinity;
+          const half = lim => [Math.min(lim, (x - prev) / 2), Math.min(lim, (next - x) / 2)];
+          view.hits.push({ type: "column", j, x, mouse: half(14), touch: half(22), y1: padT - 20, y2: padT + plotH, aMm: a });
         }
+        view.hits.push({ type: "magnet", j, x, y1: yT - blockH - 14, y2: yB + blockH + 2 });
       });
 
       // --- sensor gates (back half, behind the beam) ----------------------------
@@ -1336,13 +1368,30 @@
             ctx.stroke();
             ctx.globalAlpha = 1;
           }
-          if (g.lit && g.st !== "none") {   // where the beam crosses this sensor, magnified ×20
-            const lim = ringRy - 3;
-            const off = Math.max(-lim, Math.min(lim, (d.xSem[g.i] || 0) * 1000 * pxPerMm * DOT_MAG));
-            ctx.fillStyle = "#ffffff";
+          if (g.lit && g.st !== "none") {
+            // white dot = beam offset in beam widths: ring edge = 0.5 σ, inner circle = 0.25 σ (centred zone)
+            const rDot = ringRy - 2.5;
+            const rIn = rDot * CENTRED_SIGMA / RING_SIGMA;
+            ctx.save();
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+            ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.arc(g.x, cy - off, 2, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.ellipse(g.x, cy, ringRx * 0.55, rIn, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+            const u = offsetSigma(d, g.i) / RING_SIGMA;   // 1 = ring edge
+            const beyond = Math.abs(u) > 1;
+            const dy = Math.max(-1, Math.min(1, u)) * rDot;
+            ctx.beginPath();
+            ctx.arc(g.x, cy - dy, 2.1, 0, Math.PI * 2);
+            if (beyond) {   // hollow: the offset is beyond the ring edge
+              ctx.strokeStyle = "#ffffff";
+              ctx.lineWidth = 1.3;
+              ctx.stroke();
+            } else {
+              ctx.fillStyle = "#ffffff";
+              ctx.fill();
+            }
           }
         }
 
@@ -1351,7 +1400,7 @@
         ctx.fillStyle = ai ? C.label : (g.lit ? (g.st === "none" ? C.label : gateColour(g.st)) : C.dim);
         ctx.fillText(`S${g.i + 1}`, g.x, padT + plotH + 16);
 
-        view.hits.push({ type: "gate", i: g.i, x: g.x, y: cy, ry: ringRy });
+        view.hits.push({ type: "gate", i: g.i, x: g.x, y: cy, rx: ringRx, ry: ringRy });
       });
 
       // --- flying particle -------------------------------------------------------------
@@ -1375,7 +1424,7 @@
         ctx.fill();
       }
 
-      // --- loss point: flash, then a red marker (+ label if lost in the other plane) -------
+      // --- loss point: flash, then a red marker (its tooltip explains where it was lost) ---
       if (!ai && d.lossS !== null && pts.length > 0 && !flying) {
         const last = pts[pts.length - 1];
         const lx = toX(last.s), ly = toY(last.y);
@@ -1411,53 +1460,34 @@
         ctx.lineWidth = 1.5;
         ctx.stroke();
         ctx.restore();
-        if (!d.lostHere) {
-          pill(ctx, `lost in the ${d.otherView} view`, lx, ly, W, "#ffc9c9", "rgba(40, 12, 16, 0.9)", "rgba(255, 92, 92, 0.6)");
-        }
+        view.hits.push({ type: "loss", x: lx, y: ly, r: 9 });
       }
 
-      // --- draggable arrow tips (Play) ------------------------------------------------------
-      handles.forEach(hd => {
-        const active = (drag && drag.j === hd.j) || hoverHandle === hd.j;
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(hd.x, hd.y, active ? 7 : 5.5, 0, Math.PI * 2);
-        ctx.fillStyle = active ? `rgb(${C.push})` : "#0b1526";
-        ctx.strokeStyle = `rgb(${C.push})`;
-        ctx.lineWidth = 2;
-        ctx.shadowColor = `rgba(${C.push}, 0.9)`;
-        ctx.shadowBlur = active ? 14 : 5;
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-      });
-      if (drag && drag.view === view) {
-        const hd = handles.find(q => q.j === drag.j);
-        if (hd) {
-          const mrad = hd.push * 1000;
-          const word = mrad > 0.004 ? "push up" : (mrad < -0.004 ? "push down" : "off");
-          const txt = `M${hd.j + 1} strength: ${mrad >= 0 ? "+" : "−"}${Math.abs(mrad).toFixed(2)} mrad (${word})`;
-          pill(ctx, txt, hd.x, hd.y, W, "#e6f7fc", "rgba(8, 24, 38, 0.92)", `rgba(${C.push}, 0.7)`);
-        }
+      // --- small label for the hovered / dragged magnet (Play) ---------------------------
+      if (editable && active !== null && active !== undefined && mags[active]) {
+        const m = mags[active];
+        const mrad = m.push * 1000;
+        const txt = `M${active + 1}: ${mrad >= 0 ? "+" : "−"}${Math.abs(mrad).toFixed(2)} mrad`;
+        pill(ctx, txt, m.x, m.tipY === cy ? cy - 22 : m.tipY, W, "#e6f7fc", "rgba(8, 24, 38, 0.92)", `rgba(${C.push}, 0.7)`);
       }
     }
 
     /* ------------------------------------------------------------------ */
-    /* Pointer: tooltips (hover / tap) and dragging arrow tips              */
+    /* Pointer: tooltips (hover / tap) and dragging magnets                 */
     /* ------------------------------------------------------------------ */
     function findHit(view, mx, my, pointerType) {
-      if (canDrag(view)) {
-        const r = pointerType === "touch" ? 20 : 11;
-        let best = null, bestD = r;
-        for (const h of view.hits) {
-          if (h.type !== "handle") continue;
-          const dd = Math.hypot(mx - h.x, my - h.y);
-          if (dd <= bestD) { best = h; bestD = dd; }
-        }
-        if (best) return best;
+      const touch = pointerType === "touch" || pointerType === "pen";
+      const pad = touch ? 5 : 3;
+      for (const h of view.hits) {   // a sensor ring wins when the pointer is right on it
+        if (h.type === "gate" && Math.abs(mx - h.x) <= h.rx + pad && Math.abs(my - h.y) <= h.ry + pad) return h;
       }
       for (const h of view.hits) {
-        if (h.type === "gate" && Math.abs(mx - h.x) <= 9 && Math.abs(my - h.y) <= h.ry + 8) return h;
+        if (h.type === "loss" && Math.hypot(mx - h.x, my - h.y) <= h.r + (touch ? 6 : 0)) return h;
+      }
+      for (const h of view.hits) {
+        if (h.type !== "column") continue;
+        const [l, r] = touch ? h.touch : h.mouse;
+        if (mx >= h.x - l && mx <= h.x + r && my >= h.y1 && my <= h.y2) return h;
       }
       for (const h of view.hits) {
         if (h.type === "magnet" && Math.abs(mx - h.x) <= 10 && my >= h.y1 && my <= h.y2) return h;
@@ -1487,38 +1517,54 @@
       }
       const st = gateState(d, i);
       const xmm = (d.xSem[i] || 0) * 1000;
+      const sigMm = (d.sigSem[i] || 0.0005) * 1000;
       const dir = xmm >= 0 ? d.words[0] : d.words[1];
-      let status;
-      if (st === "none") status = `<span style="color:var(--text-muted)">No beam arrives here. The plates only see noise.</span>`;
-      else if (st === "ok") status = `<span style="color:var(--green)">Beam passes centred ✓</span>`;
-      else status = `<span style="color:var(--yellow)">Beam passes off-centre</span>`;
-      const offset = st === "none" ? "" :
-        `<div style="margin-top:2px;">Beam offset here: <b>${fmtMm(xmm)} ${dir}</b> <span class="tip-muted">(green needs about 0.1 mm or less)</span></div>`;
-      const centring = st === "none" ? "—" : ((d.sHat[i] || 0) * 100).toFixed(0) + "%";
-      return title + `<div>${status}</div>` + offset + plateBars(d, i) +
-        `<div class="tip-muted">plate readings are noisy</div>` +
-        `<div class="tip-muted" style="margin-top:3px;">Centring here: <b style="color:var(--text)">${centring}</b></div>`;
+      let body;
+      if (st === "none") {
+        body = `<div style="color:var(--text-muted)">No beam arrives here. The plates only see noise.</div>`;
+      } else {
+        body = (st === "ok"
+          ? `<div style="color:var(--green)">Beam passes centred ✓</div>`
+          : `<div style="color:var(--yellow)">Beam passes off-centre</div>`) +
+          `<div style="margin-top:2px;">Beam offset here: <b>${fmtMm(xmm)} ${dir}</b></div>` +
+          `<div class="tip-muted">Centred = within ±${fmtMm(CENTRED_SIGMA * sigMm)} (the small circle, a quarter of the beam width). Ring edge = ±${fmtMm(RING_SIGMA * sigMm)}.</div>`;
+      }
+      return title + body + plateBars(d, i) + `<div class="tip-muted">plate readings are noisy</div>`;
+    }
+
+    function lossTipHtml(d) {
+      const where = Math.round(d.lossS);
+      const title = `<div class="tip-title" style="color:var(--danger)">Beam lost at ${where} m</div>`;
+      if (d.lostHere) {
+        return title + `<div>The beam hits the wall of the tube here and stops. Sensors further on get no beam.</div>`;
+      }
+      const elsewhere = state.tab === "play"
+        ? "That plane is not shown in Play: its magnets are pre-set."
+        : `See the ${d.otherView} view.`;
+      return title + `<div>In this view the beam is still inside the tube, but here it hits the ${d.otherWall} wall. ${elsewhere} Sensors further on get no beam.</div>`;
     }
 
     function magnetTipHtml(d, j) {
       const push = -(d.theta[j] || 0) * 1000;
       const dir = push > 0.004 ? d.words[0] : (push < -0.004 ? d.words[1] : null);
-      const how = state.tab === "play" && d.p === "v"
-        ? `Drag its arrow tip up or down, or use slider M${j + 1} below.`
-        : "Set by the agent.";
       return `
         <div class="tip-title">Magnet M${j + 1} <span class="tip-muted">· ${Math.round(d.sCorr[j])} m</span></div>
         <div>${dir ? `Strength ${Math.abs(push).toFixed(2)} mrad: pushes the beam <b>${dir}</b>` : "Strength 0: no push"}</div>
-        <div class="tip-muted" style="margin-top:3px;">The magnet stays in place; only its strength changes. ${how}</div>`;
+        <div class="tip-muted" style="margin-top:3px;">The magnet stays in place; only its strength changes. Set by the agent.</div>`;
     }
 
     function showTip(view, hit, e) {
       const tip = view.tip, c = view.canvas;
       const d = planeData(view.plane);
-      if (!hit || !d || hit.type === "handle") { tip.style.display = "none"; view.tipHit = null; return; }
+      const html = !hit || !d ? null
+        : hit.type === "gate" ? gateTipHtml(d, hit.i)
+        : hit.type === "loss" ? (d.lossS !== null ? lossTipHtml(d) : null)
+        : (hit.type === "magnet" && !canDrag(view)) ? magnetTipHtml(d, hit.j)
+        : null;   // Play magnets show a small label on the plot instead
+      if (!html) { tip.style.display = "none"; view.tipHit = null; return; }
       view.tipHit = hit;
       view.tipEvt = { clientX: e.clientX, clientY: e.clientY };
-      tip.innerHTML = hit.type === "gate" ? gateTipHtml(d, hit.i) : magnetTipHtml(d, hit.j);
+      tip.innerHTML = html;
       tip.style.display = "block";
       const card = c.parentElement.getBoundingClientRect();
       let left = e.clientX - card.left + 14;
@@ -1529,22 +1575,27 @@
       tip.style.top = top + "px";
     }
 
+    // Drag anywhere in a magnet's column: up = push up. The arrow tip follows the pointer 1:1.
     function applyDrag(view, my) {
       const g = view.geo;
-      const h = view.hits.find(q => q.type === "handle" && q.j === drag.j);
-      if (!g || !h) return;
-      const mm = (g.cy - my) / g.pxPerMm;                       // pointer height in plot mm
-      let str = Math.max(-1, Math.min(1, mm / (0.8 * h.aMm)));   // arrow length = strength
-      if (Math.abs(str) < 0.03) str = 0;                         // snap to "off" near the centre
+      if (!g || !drag) return;
+      if (!drag.moved && Math.abs(my - drag.y0) < 3) return;   // a click without movement changes nothing
+      drag.moved = true;
+      const pxPerStrength = g.pxPerMm * 0.8 * drag.aMm;        // arrow length at full strength
+      let str = Math.max(-1, Math.min(1, drag.str0 + (drag.y0 - my) / pxPerStrength));
+      if (Math.abs(str) < 0.03) str = 0;                         // snap to "off" near zero
       setPush(drag.j, str * thetaMax() * 1000);
     }
 
     function endDrag() {
       if (!drag) return;
+      const moved = drag.moved;
       drag = null;
       state.sliderActive = false;
-      state.pendingLaunch = true;
-      flushFire();
+      if (moved) {   // the particle flies once the final value is confirmed
+        state.pendingLaunch = true;
+        flushFire();
+      }
       requestFrame();
     }
 
@@ -1555,14 +1606,17 @@
       c.addEventListener("pointerdown", (e) => {
         const [mx, my] = rel(e);
         const hit = findHit(view, mx, my, e.pointerType);
-        if (hit && hit.type === "handle") {
+        if (hit && hit.type === "column") {
           e.preventDefault();
           try { c.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
-          drag = { view, j: hit.j, pointerId: e.pointerId };
+          drag = {
+            view, j: hit.j, pointerId: e.pointerId, y0: my, aMm: hit.aMm, moved: false,
+            str0: -(state.theta_v[hit.j] || 0) / thetaMax(),
+          };
           state.sliderActive = true;
           view.tip.style.display = "none";
           c.style.cursor = "ns-resize";
-          applyDrag(view, my);
+          requestFrame();
         } else if (e.pointerType !== "mouse") {
           showTip(view, hit, e);   // tap shows the tooltip on touch screens
         }
@@ -1573,9 +1627,9 @@
         if (drag && drag.pointerId === e.pointerId) { applyDrag(view, my); return; }
         if (e.pointerType !== "mouse") return;
         const hit = findHit(view, mx, my, e.pointerType);
-        const hj = (hit && hit.type === "handle") ? hit.j : null;
-        if (hj !== hoverHandle) { hoverHandle = hj; requestFrame(); }
-        c.style.cursor = hj !== null ? "ns-resize" : "default";   // only the arrow tip is grabbable
+        const hc = (hit && hit.type === "column") ? hit.j : null;
+        if (hc !== hoverCol) { hoverCol = hc; requestFrame(); }
+        c.style.cursor = hc !== null ? "ns-resize" : "default";
         showTip(view, hit, e);
       });
 
@@ -1586,16 +1640,16 @@
       c.addEventListener("pointerleave", (e) => {
         if (e.pointerType !== "mouse" || drag) return;
         view.tip.style.display = "none";
-        if (hoverHandle !== null) { hoverHandle = null; requestFrame(); }
+        if (hoverCol !== null) { hoverCol = null; requestFrame(); }
       });
 
-      // Touch: stop the page from scrolling only when the finger starts on an arrow tip
+      // Touch: stop the page from scrolling only when the finger starts in a magnet's column
       c.addEventListener("touchstart", (e) => {
         if (!canDrag(view) || !e.touches.length) return;
         const t = e.touches[0];
         const r = c.getBoundingClientRect();
         const hit = findHit(view, t.clientX - r.left, t.clientY - r.top, "touch");
-        if (hit && hit.type === "handle") e.preventDefault();
+        if (hit && hit.type === "column") e.preventDefault();
       }, { passive: false });
     }
 
