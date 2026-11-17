@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Steer the Beam — CERN TT20</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0F1A2B;
+      --card-bg: #172740;
+      --panel-bg: #1e3252;
+      --border: #263b5c;
+      --text: #F4F1EA;
+      --text-muted: #8fa2be;
+      --accent: #F2994A;       /* Beam orange */
+      --cyan: #5CC8E6;         /* Secondary cyan */
+      --green: #27AE60;        /* Sensor balanced green */
+      --danger: #FF5C5C;       /* Lost beam red */
+      --gold: #F2C94C;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, h4, .brand h1, .tab-btn, .db-card-title, .canvas-title {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-logo {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #e07a22);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px; font-family: 'Space Grotesk', sans-serif;
+      color: #fff; box-shadow: 0 4px 14px rgba(242, 153, 74, 0.35);
+    }
+    .brand h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+    .brand p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .ws-status {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-family: 'JetBrains Mono', monospace;
+      padding: 5px 12px; border-radius: 9999px; background: rgba(39, 174, 96, 0.15);
+      color: var(--green); border: 1px solid rgba(39, 174, 96, 0.3);
+    }
+    .ws-status.disconnected {
+      background: rgba(255, 92, 92, 0.15); color: var(--danger);
+      border-color: rgba(255, 92, 92, 0.3);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+    /* 3 Benchmark Dashboard Cards */
+    .dashboard-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      padding: 14px 28px 0 28px;
+    }
+    @media (max-width: 800px) {
+      .dashboard-cards { grid-template-columns: 1fr; }
+    }
+    .db-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .db-card.active-db { border-color: var(--accent); background: rgba(242, 153, 74, 0.06); }
+    .db-card-left { display: flex; flex-direction: column; gap: 3px; }
+    .db-card-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .db-card-sub { font-size: 11px; color: var(--text-muted); }
+    .db-card-val { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--gold); }
+
+    /* 3 Big Tabs */
+    .tabs-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 28px 0 28px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: var(--card-bg);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      padding: 11px 22px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+    .tab-btn:hover { background: #223757; color: var(--text); }
+    .tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 4px 14px rgba(242, 153, 74, 0.35);
+    }
+
+    /* Sub-bar / Controls */
+    .sub-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 28px;
+      margin-top: 12px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .kpi-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .kpi-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--panel-bg); border: 1px solid var(--border);
+      padding: 6px 14px; border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700;
+    }
+    .kpi-badge .label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-right: 4px; }
+    .btn-action {
+      background: var(--panel-bg); color: var(--text); border: 1px solid var(--border);
+      padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px; font-family: inherit;
+    }
+    .btn-action:hover { background: #243b61; border-color: #3b5682; }
+    .btn-action.btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn-action.btn-accent:hover { background: #e07a22; }
+
+    /* Content Area */
+    .content-area {
+      padding: 16px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 1;
+    }
+    .canvas-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+    }
+    .canvas-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+    }
+    .canvas-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    canvas {
+      width: 100%;
+      display: block;
+      background: #091220;
+      border: 1px solid #1a2a44;
+      border-radius: 6px;
+    }
+
+    /* Minimal Legend: ONLY beam, sensors, lost beam x, pipe wall, magnets */
+    .legend-mini {
+      display: flex; align-items: center; gap: 16px; margin-top: 8px;
+      font-size: 12px; color: var(--text-muted); flex-wrap: wrap;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-box { width: 12px; height: 8px; border-radius: 2px; }
+
+    /* Magnet Sliders Grid */
+    .sliders-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+    }
+    .sliders-grid-12 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 10px 16px;
+      margin-top: 10px;
+    }
+    .slider-row {
+      display: flex; flex-direction: column; gap: 4px;
+      background: #111f36; border: 1px solid var(--border);
+      padding: 8px 10px; border-radius: 6px;
+    }
+    .slider-top {
+      display: flex; justify-content: space-between; align-items: center; font-size: 11px;
+    }
+    .slider-name { font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; color: #fff; }
+    .slider-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); text-align: right; }
+    input[type=range] {
+      width: 100%; height: 5px; background: #243b61; border-radius: 3px; outline: none; cursor: pointer; accent-color: var(--accent);
+    }
+
+    /* Gemini Reasoning Box */
+    .gemini-reasoning-box {
+      background: #091220;
+      border: 1px solid #1a2a44;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      color: #cbd5e1;
+      height: 140px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      margin-top: 10px;
+    }
+
+    /* Collapsible Physicist Box */
+    .physicist-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: auto;
+      overflow: hidden;
+    }
+    .physicist-header {
+      padding: 10px 16px; display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-muted); user-select: none;
+    }
+    .physicist-header:hover { background: rgba(255,255,255,0.02); color: var(--text); }
+    .physicist-content {
+      padding: 12px 16px; font-size: 12px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-logo">CERN</div>
+      <div>
+        <h1>Steer the Beam</h1>
+        <p>CERN fires protons down a 900 m tube. 22 magnets aim them. Can you thread the beam better than an AI?</p>
+      </div>
+    </div>
+    <div id="wsStatus" class="ws-status disconnected">
+      <span class="dot"></span>
+      <span id="wsStatusText">Connecting...</span>
+    </div>
+  </header>
+
+  <!-- 3 Benchmark Dashboard Cards -->
+  <div class="dashboard-cards">
+    <div class="db-card active-db" id="cardYou">
+      <div class="db-card-left">
+        <span class="db-card-title">🧑 You: best centring</span>
+        <span class="db-card-sub">your best in Play mode</span>
+      </div>
+      <span class="db-card-val" id="valYouBest">—</span>
+    </div>
+    <div class="db-card" id="cardBayes">
+      <div class="db-card-left">
+        <span class="db-card-title">🧠 Algorithm: 0.50 avg</span>
+        <span class="db-card-sub">average over our evaluation</span>
+      </div>
+      <span class="db-card-val">0.50</span>
+    </div>
+    <div class="db-card" id="cardGemini">
+      <div class="db-card-left">
+        <span class="db-card-title">🤖 Gemini AI: 0.26 avg</span>
+        <span class="db-card-sub">average over our evaluation</span>
+      </div>
+      <span class="db-card-val">0.26</span>
+    </div>
+  </div>
+
+  <!-- 3 Big Tabs -->
+  <div class="tabs-bar">
+    <button class="tab-btn active" id="tabPlay" onclick="switchTab('play')">🎮 Play</button>
+    <button class="tab-btn" id="tabBayes" onclick="switchTab('bayes')">🧠 Watch the algorithm</button>
+    <button class="tab-btn" id="tabGemini" onclick="switchTab('gemini')">🤖 Watch Gemini</button>
+  </div>
+
+  <!-- Sub-bar Controls -->
+  <div class="sub-bar">
+    <div class="kpi-row">
+      <div class="kpi-badge">
+        <span class="label">Centring</span>
+        <span id="lblLiveCentring" style="color:var(--gold);">0.0%</span>
+      </div>
+      <div class="kpi-badge" id="boxShot" style="display:none;">
+        <span class="label">Shot</span>
+        <span id="lblLiveShot">0 / 60</span>
+      </div>
+      <div class="kpi-badge">
+        <span class="label">Beam</span>
+        <span id="lblLiveStatus" style="color:var(--green);">Alive</span>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:8px;">
+      <div id="speedButtonsGroup" style="display:none; align-items:center; gap:4px; margin-right:4px;">
+        <span style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">Speed:</span>
+        <button class="btn-action" id="spd1" style="padding:4px 9px; font-size:12px;" onclick="setSpeed(1.0)">1×</button>
+        <button class="btn-action btn-accent" id="spd3" style="padding:4px 9px; font-size:12px;" onclick="setSpeed(3.0)">3×</button>
+        <button class="btn-action" id="spd10" style="padding:4px 9px; font-size:12px;" onclick="setSpeed(10.0)">10×</button>
+      </div>
+      <button id="btnPlayPause" class="btn-action btn-accent" style="display:none;" onclick="togglePlayPause()">▶ Play</button>
+      <button class="btn-action" onclick="newPuzzle()">🔀 New puzzle</button>
+      <button id="btnZero" class="btn-action" onclick="zeroMagnets()">↺ Zero magnets</button>
+    </div>
+  </div>
+
+  <div class="content-area">
+    <!-- Horizontal View: hidden in Play tab, visible in Watch tabs -->
+    <div class="canvas-card" id="cardCanvasH" style="display:none;">
+      <div class="canvas-header">
+        <div class="canvas-title">
+          <span style="color:var(--cyan);">&#9654;</span>
+          <span>Left–Right View (Horizontal Plane)</span>
+        </div>
+      </div>
+      <canvas id="canvasH" width="1000" height="190"></canvas>
+    </div>
+
+    <!-- Vertical View: large in Play tab, standard in Watch tabs -->
+    <div class="canvas-card" id="cardCanvasV">
+      <div class="canvas-header">
+        <div class="canvas-title">
+          <span style="color:var(--accent);">&#9654;</span>
+          <span>Up–Down View (Vertical Plane)</span>
+        </div>
+      </div>
+      <canvas id="canvasV" width="1000" height="280"></canvas>
+
+      <!-- Minimal Legend: ONLY beam, sensors, lost beam x, pipe wall, magnets -->
+      <div class="legend-mini">
+        <div class="legend-item"><div class="legend-box" style="background:var(--accent);"></div><span>beam</span></div>
+        <div class="legend-item"><div class="legend-box" style="background:var(--green);"></div><span>sensors</span></div>
+        <div class="legend-item"><span style="color:var(--danger); font-weight:900;">&#10007;</span><span>lost beam</span></div>
+        <div class="legend-item"><div class="legend-box" style="background:var(--danger);"></div><span>pipe wall</span></div>
+        <div class="legend-item"><span style="color:var(--text-muted); font-size:10px;">&#9650;</span><span>magnets</span></div>
+      </div>
+    </div>
+
+    <!-- Sliders Card -->
+    <div class="sliders-card" id="cardSliders">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:13px; font-weight:700;" id="slidersTitle">12 Aiming Magnets (Up–Down)</span>
+        <span style="font-size:11px; color:var(--text-muted);">Adjust to center the beam live</span>
+      </div>
+      <div id="slidersGrid" class="sliders-grid-12"></div>
+    </div>
+
+    <!-- Gemini Reasoning Card -->
+    <div class="canvas-card" id="cardGeminiReasoning" style="display:none;">
+      <div class="canvas-title">
+        <span>Gemini Reasoning Transcript</span>
+      </div>
+      <div id="geminiBox" class="gemini-reasoning-box">Gemini thoughts and actions will stream here during replay...</div>
+    </div>
+
+    <!-- Collapsible Details for physicists -->
+    <div class="physicist-box">
+      <div class="physicist-header" onclick="togglePhysicist()">
+        <span>🔬 <strong>Details for physicists</strong></span>
+        <span id="physicistArrow">▶</span>
+      </div>
+      <div id="physicistContent" class="physicist-content" style="display:none;">
+        <p><strong>CERN TT20 Transfer Line:</strong> 400 GeV/c slow-extracted proton beam from SPS to North Area target over 900 meters. Uncoupled linear optics with 10 horizontal / 12 vertical corrector dipoles and 11 horizontal / 10 vertical split-foil secondary emission monitors (SEMs). Uniform background noise &nu; = 0.25, Table 1 medium optics randomization. The Bayesian benchmark uses a 100k-particle filter (Adam Štafa CERN report, 2026).</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      tab: "play",
+      seed: 0,
+      shot: 0,
+      playing: false,
+      done: false,
+      theta_v: new Array(12).fill(0),
+      theta_h: new Array(10).fill(0),
+      obs_v: [],
+      obs_h: [],
+      score: { centring_v: 0, centring_all: 0, sf: 0, reward: 0, is_lost: false, loss_s: null, solved: false },
+      god_view: { x_sem_h: [], x_sem_v: [], is_lost: false, loss_s: null, first_lost_sem_h: null, first_lost_sem_v: null },
+      machine_info: null,
+      bestCentring: 0.0,
+      speed: 3.0,
+      agent_text: ""
+    };
+
+    let ws = null;
+    let wsTimer = null;
+    let dragDebounce = null;
+
+    function togglePhysicist() {
+      const el = document.getElementById("physicistContent");
+      const arr = document.getElementById("physicistArrow");
+      const isHidden = el.style.display === "none";
+      el.style.display = isHidden ? "block" : "none";
+      arr.textContent = isHidden ? "▼" : "▶";
+    }
+
+    function connectWS() {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        document.getElementById("wsStatus").className = "ws-status";
+        document.getElementById("wsStatusText").textContent = "Connected";
+        if (wsTimer) { clearTimeout(wsTimer); wsTimer = null; }
+        sendInit();
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "state") {
+            handleState(data);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+
+      ws.onclose = () => {
+        document.getElementById("wsStatus").className = "ws-status disconnected";
+        document.getElementById("wsStatusText").textContent = "Disconnected";
+        if (!wsTimer) wsTimer = setTimeout(connectWS, 2000);
+      };
+    }
+
+    function sendWS(msg) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(msg));
+      }
+    }
+
+    function sendInit() {
+      sendWS({
+        type: "init",
+        mode: state.tab,
+        seed: state.seed,
+        speed: 3.0
+      });
+    }
+
+    function handleState(data) {
+      state.shot = data.shot;
+      state.done = data.done;
+      state.theta_v = data.theta_v || state.theta_v;
+      state.theta_h = data.theta_h || state.theta_h;
+      state.obs_v = data.obs_v || state.obs_v;
+      state.obs_h = data.obs_h || state.obs_h;
+      state.score = data.score || state.score;
+      state.god_view = data.god_view || state.god_view;
+      if (data.machine_info) state.machine_info = data.machine_info;
+
+      const centringVal = state.tab === "play"
+        ? (data.score.centring_v || (data.score.sf * 100))
+        : (data.score.centring_all || (data.score.sf * 100));
+
+      if (state.tab === "play" && centringVal > state.bestCentring) {
+        state.bestCentring = centringVal;
+        document.getElementById("valYouBest").textContent = state.bestCentring.toFixed(1) + "%";
+      }
+
+      if (data.agent_text && state.tab === "gemini") {
+        state.agent_text = data.agent_text;
+        const box = document.getElementById("geminiBox");
+        box.textContent = state.agent_text;
+        box.scrollTop = box.scrollHeight;
+      }
+
+      updateUI(centringVal);
+      renderCanvases();
+    }
+
+    function updateUI(centringVal) {
+      document.getElementById("lblLiveCentring").textContent = centringVal.toFixed(1) + "%";
+      document.getElementById("lblLiveShot").textContent = `${state.shot} / 60`;
+
+      const statusEl = document.getElementById("lblLiveStatus");
+      if (state.score.is_lost) {
+        statusEl.textContent = `Lost @ ${state.score.loss_s ? state.score.loss_s.toFixed(0) + "m" : "pipe"}`;
+        statusEl.style.color = "var(--danger)";
+      } else if (centringVal >= 95.0) {
+        statusEl.textContent = "Goal reached (≥95%)!";
+        statusEl.style.color = "var(--gold)";
+      } else {
+        statusEl.textContent = "Alive";
+        statusEl.style.color = "var(--green)";
+      }
+
+      syncSliders();
+
+      if (state.tab !== "play") {
+        document.getElementById("btnPlayPause").textContent = state.playing ? "⏸ Pause" : "▶ Play";
+        document.getElementById("btnPlayPause").className = state.playing ? "btn-action" : "btn-action btn-accent";
+      }
+    }
+
+    function syncSliders() {
+      for (let i = 0; i < 12; i++) {
+        const val = state.theta_v[i] || 0;
+        const slider = document.getElementById(`sl_v_${i}`);
+        const text = document.getElementById(`val_v_${i}`);
+        if (slider && text) {
+          slider.value = (val * 1000).toFixed(3);
+          text.textContent = (val * 1000 >= 0 ? "+" : "") + (val * 1000).toFixed(2) + " mrad";
+          slider.disabled = (state.tab !== "play");
+        }
+      }
+    }
+
+    function initSliders() {
+      const grid = document.getElementById("slidersGrid");
+      grid.innerHTML = "";
+      for (let i = 0; i < 12; i++) {
+        const row = document.createElement("div");
+        row.className = "slider-row";
+        row.innerHTML = `
+          <div class="slider-top">
+            <span class="slider-name">Magnet V${i+1}</span>
+            <span class="slider-val" id="val_v_${i}">+0.00 mrad</span>
+          </div>
+          <input type="range" id="sl_v_${i}" min="-0.45" max="0.45" step="0.005" value="0" oninput="onSliderMove(${i}, this.value)">
+        `;
+        grid.appendChild(row);
+      }
+    }
+
+    function onSliderMove(index, valueMrad) {
+      if (state.tab !== "play") return;
+      const rad = parseFloat(valueMrad) / 1000;
+      state.theta_v[index] = rad;
+      const text = document.getElementById(`val_v_${index}`);
+      if (text) text.textContent = (parseFloat(valueMrad) >= 0 ? "+" : "") + parseFloat(valueMrad).toFixed(2) + " mrad";
+
+      if (dragDebounce) clearTimeout(dragDebounce);
+      dragDebounce = setTimeout(() => {
+        sendWS({ type: "fire", theta_v: state.theta_v });
+      }, 100);
+    }
+
+    function zeroMagnets() {
+      if (state.tab !== "play") return;
+      state.theta_v.fill(0);
+      syncSliders();
+      sendWS({ type: "fire", theta_v: state.theta_v });
+    }
+
+    function newPuzzle() {
+      state.seed = Math.floor(Math.random() * 5);
+      state.playing = false;
+      sendInit();
+    }
+
+    function setSpeed(s) {
+      state.speed = s;
+      document.getElementById("spd1").className = s === 1.0 ? "btn-action btn-accent" : "btn-action";
+      document.getElementById("spd3").className = s === 3.0 ? "btn-action btn-accent" : "btn-action";
+      document.getElementById("spd10").className = s === 10.0 ? "btn-action btn-accent" : "btn-action";
+      sendWS({ type: "set_speed", speed: state.speed });
+    }
+
+    function switchTab(t) {
+      if (state.tab === t) return;
+      state.tab = t;
+      state.playing = false;
+
+      document.getElementById("tabPlay").className = t === "play" ? "tab-btn active" : "tab-btn";
+      document.getElementById("tabBayes").className = t === "bayes" ? "tab-btn active" : "tab-btn";
+      document.getElementById("tabGemini").className = t === "gemini" ? "tab-btn active" : "tab-btn";
+
+      document.getElementById("cardYou").className = t === "play" ? "db-card active-db" : "db-card";
+      document.getElementById("cardBayes").className = t === "bayes" ? "db-card active-db" : "db-card";
+      document.getElementById("cardGemini").className = t === "gemini" ? "db-card active-db" : "db-card";
+
+      const isPlay = (t === "play");
+      document.getElementById("cardCanvasH").style.display = isPlay ? "none" : "block";
+      document.getElementById("boxShot").style.display = isPlay ? "none" : "inline-flex";
+      document.getElementById("speedButtonsGroup").style.display = isPlay ? "none" : "inline-flex";
+      document.getElementById("btnPlayPause").style.display = isPlay ? "none" : "inline-flex";
+      document.getElementById("btnZero").style.display = isPlay ? "inline-flex" : "none";
+      document.getElementById("cardGeminiReasoning").style.display = (t === "gemini") ? "block" : "none";
+
+      const canvasV = document.getElementById("canvasV");
+      canvasV.height = isPlay ? 280 : 190;
+
+      sendInit();
+    }
+
+    function togglePlayPause() {
+      if (state.playing) {
+        state.playing = false;
+        sendWS({ type: "stop" });
+        updateUI(state.score.centring_all || 0);
+      } else {
+        state.playing = true;
+        updateUI(state.score.centring_all || 0);
+        if (state.tab === "bayes") {
+          sendWS({ type: "start_bayes", seed: state.seed, speed: state.speed });
+        } else if (state.tab === "gemini") {
+          sendWS({ type: "start_gemini", seed: state.seed, speed: state.speed });
+        }
+      }
+    }
+
+    function renderCanvases() {
+      if (state.tab !== "play") {
+        renderPlane("canvasH", "h");
+      }
+      renderPlane("canvasV", "v");
+    }
+
+    function renderPlane(canvasId, plane) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const padL = 40;
+      const padR = 20;
+      const padT = 16;
+      const padB = 22;
+      const plotW = w - padL - padR;
+      const plotH = h - padT - padB;
+
+      const toX = (s) => padL + (s / 900.0) * plotW;
+      const toY = (yMm) => padT + plotH * (0.5 - yMm / 80.0);
+
+      // Background grid lines
+      ctx.strokeStyle = "#172740";
+      ctx.lineWidth = 1;
+      ctx.font = '9px "JetBrains Mono", monospace';
+      ctx.fillStyle = "#6d84a3";
+
+      for (let s = 0; s <= 900; s += 100) {
+        const x = toX(s);
+        ctx.beginPath();
+        ctx.moveTo(x, padT);
+        ctx.lineTo(x, padT + plotH);
+        ctx.stroke();
+        ctx.textAlign = "center";
+        ctx.fillText(`${s}m`, x, h - 6);
+      }
+
+      for (let y = -30; y <= 30; y += 15) {
+        const py = toY(y);
+        ctx.beginPath();
+        ctx.moveTo(padL, py);
+        ctx.lineTo(padL + plotW, py);
+        ctx.stroke();
+        ctx.textAlign = "right";
+        ctx.fillText(`${y > 0 ? "+" : ""}${y}`, padL - 5, py + 3);
+      }
+
+      // Pipe wall outline
+      const minfo = state.machine_info;
+      const sAp = minfo ? minfo.s_ap : [];
+      const aAp = minfo ? (plane === "h" ? minfo.a_h_ap : minfo.a_v_ap) : [];
+
+      if (sAp.length > 0 && aAp.length > 0) {
+        ctx.strokeStyle = "#FF5C5C";
+        ctx.lineWidth = 1.6;
+
+        ctx.beginPath();
+        for (let i = 0; i < sAp.length; i++) {
+          const x = toX(sAp[i]);
+          const y = toY(aAp[i] * 1000);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        ctx.beginPath();
+        for (let i = 0; i < sAp.length; i++) {
+          const x = toX(sAp[i]);
+          const y = toY(-aAp[i] * 1000);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      // Magnets
+      const sCorr = minfo ? (plane === "h" ? minfo.s_corr_h : minfo.s_corr_v) : [];
+      ctx.fillStyle = "#8fa2be";
+      for (let j = 0; j < sCorr.length; j++) {
+        const cx = toX(sCorr[j]);
+        ctx.beginPath();
+        ctx.moveTo(cx, padT + 2);
+        ctx.lineTo(cx - 3, padT - 6);
+        ctx.lineTo(cx + 3, padT - 6);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Sensors with foil readings
+      const sSem = minfo ? (plane === "h" ? minfo.s_sem_h : minfo.s_sem_v) : [];
+      const obsList = plane === "h" ? state.obs_h : state.obs_v;
+      const firstLost = plane === "h" ? state.god_view.first_lost_sem_h : state.god_view.first_lost_sem_v;
+
+      for (let i = 0; i < sSem.length; i++) {
+        const mx = toX(sSem[i]);
+        const obs = obsList[i] || { ratio: 0.5, level: 0 };
+        const isLostHere = (firstLost !== null && firstLost !== undefined && i >= firstLost);
+
+        ctx.strokeStyle = "#263b5c";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(mx, padT + 4);
+        ctx.lineTo(mx, padT + plotH - 4);
+        ctx.stroke();
+
+        const r = obs.ratio;
+        const l = Math.min(1.5, obs.level);
+        const i1 = r * l;
+        const i2 = (1.0 - r) * l;
+
+        const maxBarH = 26;
+        const bar1H = Math.min(maxBarH, i1 * maxBarH);
+        const bar2H = Math.min(maxBarH, i2 * maxBarH);
+        const y0 = toY(0);
+
+        if (!isLostHere) {
+          ctx.fillStyle = "#5CC8E6";
+          ctx.fillRect(mx - 4, y0, 3, bar1H);
+          ctx.fillStyle = "#27AE60";
+          ctx.fillRect(mx + 1, y0 - bar2H, 3, bar2H);
+        }
+
+        if (isLostHere) {
+          ctx.strokeStyle = "#FF5C5C";
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(mx - 5, y0 - 7);
+          ctx.lineTo(mx + 5, y0 + 7);
+          ctx.moveTo(mx - 5, y0 + 7);
+          ctx.lineTo(mx + 5, y0 - 7);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = isLostHere ? "#FF5C5C" : "#8fa2be";
+        ctx.font = '8px "JetBrains Mono", monospace';
+        ctx.textAlign = "center";
+        ctx.fillText(`S${i+1}`, mx, padT + plotH + 11);
+      }
+
+      // Beam trajectory:
+      // Always drawn continuously after every shot in all tabs!
+      if (state.god_view.x_sem_h && state.god_view.x_sem_h.length > 0) {
+        const xSem = plane === "h" ? state.god_view.x_sem_h : state.god_view.x_sem_v;
+        const sigSem = minfo ? (plane === "h" ? minfo.sigma_sem_h : minfo.sigma_sem_v) : [];
+        const isBeamLost = state.god_view.is_lost;
+        const lossS = state.god_view.loss_s;
+
+        const points = [];
+        points.push({ s: 0, x: 0, sig: (sigSem[0] || 0.001) * 1000 });
+
+        for (let i = 0; i < sSem.length; i++) {
+          if (isBeamLost && lossS && sSem[i] > lossS) break;
+          points.push({ s: sSem[i], x: xSem[i] * 1000, sig: (sigSem[i] || 0.001) * 1000 });
+        }
+
+        if (isBeamLost && lossS) {
+          const aLoss = plane === "h" ? (minfo ? minfo.a_h_ap[0]*1000 : 25) : 25;
+          points.push({ s: lossS, x: (xSem[0] >= 0 ? aLoss : -aLoss), sig: 1.5 });
+        }
+
+        if (points.length > 1) {
+          ctx.fillStyle = "rgba(242, 153, 74, 0.22)";
+          ctx.beginPath();
+          for (let i = 0; i < points.length; i++) {
+            const px = toX(points[i].s);
+            const py = toY(points[i].x + 3 * points[i].sig);
+            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+          }
+          for (let i = points.length - 1; i >= 0; i--) {
+            const px = toX(points[i].s);
+            const py = toY(points[i].x - 3 * points[i].sig);
+            ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.strokeStyle = "#F2994A";
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          for (let i = 0; i < points.length; i++) {
+            const px = toX(points[i].s);
+            const py = toY(points[i].x);
+            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+
+          if (isBeamLost && lossS) {
+            const lx = toX(lossS);
+            const ly = toY(points[points.length - 1].x);
+            ctx.fillStyle = "#FF5C5C";
+            ctx.beginPath();
+            ctx.arc(lx, ly, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    window.addEventListener("resize", () => {
+      const c1 = document.getElementById("canvasH");
+      const c2 = document.getElementById("canvasV");
+      if (c1 && c2 && c2.parentElement) {
+        const w = c2.parentElement.clientWidth - 36;
+        c1.width = w;
+        c2.width = w;
+        renderCanvases();
+      }
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      initSliders();
+      const c1 = document.getElementById("canvasH");
+      const c2 = document.getElementById("canvasV");
+      if (c1 && c2 && c2.parentElement) {
+        const w = c2.parentElement.clientWidth - 36;
+        c1.width = w;
+        c2.width = w;
+      }
+      connectWS();
+      renderCanvases();
+    });
+  </script>
+</body>
+</html>
