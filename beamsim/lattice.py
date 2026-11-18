@@ -1,9 +1,10 @@
 """Lattice definitions and synthetic TT20 transfer line generator.
 
-Follows CERN TT20 beamline model specifications (Adam Štafa report §1.1):
-- Length ~900 m, FODO-like beta oscillation (~15 to 100 m)
-- Horizontal: 10 correctors, 11 SEM monitors
-- Vertical: 12 correctors, 10 SEM monitors
+Synthetic, TT20-like model (not the real TT20 lattice):
+- Corrector/monitor counts as in Adam Štafa's report §1.1:
+  horizontal 10 correctors / 11 SEM monitors, vertical 12 correctors / 10 SEM monitors
+- Length 900 m and the FODO-like beta oscillation (~15 to 100 m) are our own choices; the
+  report gives no line length (the real TT20 runs ~600 m from the SPS to the first splitter)
 - Interleaved elements with upstream correctors for each monitor and near-null
   directions on the last 1-2 correctors
 - Consistent Twiss parameters (mu = integral(ds / (2*pi*beta)), alpha = -0.5 * dbeta/ds)
