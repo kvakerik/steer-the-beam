@@ -106,6 +106,7 @@
       border-radius: 8px; padding: 9px 14px; font-size: 13px; line-height: 1.45; color: var(--text);
     }
     .info-line .wiggle { color: var(--gold); }
+    .info-wrap { padding: 14px 28px 0 28px; }
 
     /* 3 Big Tabs */
     .tabs-bar {
@@ -138,18 +139,27 @@
     }
 
     /* Sub-bar / Controls */
+    /* Control bar: sits right above the plots and sticks to the top while scrolling */
     .sub-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 28px;
-      margin-top: 12px;
+      padding: 10px 28px;
+      margin-top: 14px;
       background: var(--card-bg);
       border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 8px 12px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
     }
+    .ctrl-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .txt-short { display: none; }
+    /* scrolling to a plot (or the sliders) stops just below the sticky bar */
+    .canvas-card, .sliders-card { scroll-margin-top: calc(var(--bar-h, 64px) + 10px); }
     .kpi-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
     .kpi-badge {
       display: inline-flex; align-items: center; gap: 6px;
@@ -229,7 +239,7 @@
 
     /* Hover tooltip on the plot */
     .tip {
-      position: absolute; pointer-events: none; display: none; z-index: 5;
+      position: absolute; pointer-events: none; display: none; z-index: 30;   /* above the sticky bar */
       background: rgba(9, 18, 32, 0.96); border: 1px solid #33507a; border-radius: 8px;
       padding: 9px 11px; font-size: 12px; line-height: 1.45; color: var(--text);
       min-width: 200px; max-width: 270px; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
@@ -307,8 +317,23 @@
     .physicist-content p + p { margin-top: 8px; }
 
     @media (max-width: 640px) {
-      header, .dashboard-cards, .tabs-bar, .sub-bar, .content-area { padding-left: 16px; padding-right: 16px; }
+      header, .dashboard-cards, .tabs-bar, .sub-bar, .content-area, .info-wrap { padding-left: 16px; padding-right: 16px; }
+      /* control bar: compact, all items in one flow so it wraps to at most two lines */
+      .sub-bar { padding-top: 7px; padding-bottom: 7px; gap: 6px 6px; justify-content: flex-start; }
+      .kpi-row, .ctrl-row { display: contents; }
+      .kpi-badge { padding: 4px 7px; font-size: 11px; gap: 4px; }
+      .kpi-badge .label { font-size: 8px; margin-right: 0; }
+      .sub-bar .btn-action { padding: 5px 9px; font-size: 12px; }
+      .speed-label { display: none; }
+      .txt-long { display: none; }
+      .txt-short { display: inline; }
       .canvas-card, .sliders-card { padding: 12px; }
+    }
+    @media (max-width: 380px) {
+      .sub-bar { gap: 5px 5px; }
+      .kpi-badge { padding: 3px 4px; font-size: 10px; gap: 3px; }
+      .kpi-badge .label { font-size: 7px; }
+      .sub-bar .btn-action { padding: 5px 7px; }
     }
   </style>
 </head>
@@ -328,11 +353,26 @@
     </div>
   </header>
 
+  <!-- 3 Big Tabs -->
+  <div class="tabs-bar">
+    <button class="tab-btn active" id="tabPlay" onclick="switchTab('play')">🎮 Play</button>
+    <button class="tab-btn" id="tabBayes" onclick="switchTab('bayes')">🧠 Watch the algorithm</button>
+    <button class="tab-btn" id="tabGemini" onclick="switchTab('gemini')">🤖 Watch Gemini</button>
+  </div>
+
+  <!-- One-line explanation of the current tab -->
+  <div class="info-wrap">
+      <div class="info-line" id="infoLine">
+        <span id="infoMain">Practice mode: you steer the 12 up–down magnets; the 10 left–right ones are already set for you. The AI has to handle all 22 at once.</span>
+        <span class="wiggle" id="infoWiggle" style="display:none;">Even with all magnets at 0 the beam wiggles: each magnet has a hidden error the agent must cancel.</span>
+      </div>
+  </div>
+
   <!-- 3 Benchmark Dashboard Cards -->
   <div class="dashboard-cards">
     <div class="db-card active-db" id="cardYou">
       <div class="db-card-left">
-        <span class="db-card-title">🧑 You: best centring</span>
+        <span class="db-card-title">🧑 You: best on this puzzle</span>
         <span class="db-card-sub">practice: one plane, centring %</span>
       </div>
       <span class="db-card-val" id="valYouBest">—</span>
@@ -359,14 +399,7 @@
     </div>
   </div>
 
-  <!-- 3 Big Tabs -->
-  <div class="tabs-bar">
-    <button class="tab-btn active" id="tabPlay" onclick="switchTab('play')">🎮 Play</button>
-    <button class="tab-btn" id="tabBayes" onclick="switchTab('bayes')">🧠 Watch the algorithm</button>
-    <button class="tab-btn" id="tabGemini" onclick="switchTab('gemini')">🤖 Watch Gemini</button>
-  </div>
-
-  <!-- Sub-bar Controls -->
+  <!-- Control bar (sticky) -->
   <div class="sub-bar">
     <div class="kpi-row">
       <div class="kpi-badge" id="kpiPuzzle">
@@ -387,25 +420,20 @@
       </div>
     </div>
 
-    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+    <div class="ctrl-row">
       <div id="speedButtonsGroup" style="display:none; align-items:center; gap:4px; margin-right:4px;">
-        <span style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">Speed:</span>
+        <span class="speed-label" style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">Speed:</span>
         <button class="btn-action" id="spd1" style="padding:4px 9px; font-size:12px;" onclick="setSpeed(1.0)">1×</button>
         <button class="btn-action btn-accent" id="spd3" style="padding:4px 9px; font-size:12px;" onclick="setSpeed(3.0)">3×</button>
         <button class="btn-action" id="spd10" style="padding:4px 9px; font-size:12px;" onclick="setSpeed(10.0)">10×</button>
       </div>
       <button id="btnPlayPause" class="btn-action btn-accent" style="display:none;" onclick="togglePlayPause()">▶ Play</button>
-      <button class="btn-action" onclick="newPuzzle()">🔀 Next puzzle</button>
-      <button id="btnZero" class="btn-action" onclick="zeroMagnets()">↺ Zero magnets</button>
+      <button class="btn-action" onclick="newPuzzle()">🔀 <span class="txt-long">Next puzzle</span><span class="txt-short">Next</span></button>
+      <button id="btnZero" class="btn-action" onclick="zeroMagnets()">↺ <span class="txt-long">Zero magnets</span><span class="txt-short">Zero</span></button>
     </div>
   </div>
 
   <div class="content-area">
-    <div class="info-line" id="infoLine">
-      <span id="infoMain">Practice mode: you steer the 12 up–down magnets; the 10 left–right ones are already set for you. The AI has to handle all 22 at once.</span>
-      <span class="wiggle" id="infoWiggle" style="display:none;">Even with all magnets at 0 the beam wiggles: each magnet has a hidden error the agent must cancel.</span>
-    </div>
-
     <!-- Side view (vertical plane): Play and Watch -->
     <div class="canvas-card" id="cardCanvasV">
       <div class="canvas-header">
@@ -684,17 +712,20 @@
 
     function updateUI(centringVal) {
       document.getElementById("lblLiveCentring").textContent = centringVal.toFixed(1) + "%";
-      document.getElementById("lblLiveShot").textContent = `${state.shot} / 60`;
+      document.getElementById("lblLiveShot").innerHTML =
+        `<span class="txt-long">${state.shot} / 60</span><span class="txt-short">${state.shot}/60</span>`;
 
       const statusEl = document.getElementById("lblLiveStatus");
+      const both = (long, short) => `<span class="txt-long">${long}</span><span class="txt-short">${short}</span>`;
       if (state.score.is_lost) {
-        statusEl.textContent = `Hits the wall @ ${state.score.loss_s ? state.score.loss_s.toFixed(0) + " m" : "pipe"}`;
+        const at = state.score.loss_s ? state.score.loss_s.toFixed(0) + " m" : "pipe";
+        statusEl.innerHTML = both(`Hits the wall @ ${at}`, `wall @ ${at}`);
         statusEl.style.color = "var(--danger)";
       } else if (centringVal >= 95.0) {
-        statusEl.textContent = "Goal reached (≥95%)!";
+        statusEl.innerHTML = both("Goal reached (≥95%)!", "goal ✓");
         statusEl.style.color = "var(--gold)";
       } else {
-        statusEl.textContent = "Reaches the end";
+        statusEl.innerHTML = both("Reaches the end", "reaches end");
         statusEl.style.color = "var(--green)";
       }
 
@@ -827,6 +858,8 @@
 
     function newPuzzle() {   // cycle 0 → 1 → 2 → 3 → 4 → 0; Play and both Watch tabs share it
       state.seed = (state.seed + 1) % 5;
+      state.bestCentring = 0;   // "your best on this puzzle" starts again
+      document.getElementById("valYouBest").textContent = "—";
       state.run = "idle";
       updatePlayButton();
       sendInit();
@@ -834,7 +867,8 @@
 
     // Yellow "this puzzle" score under each average: live during a Watch run, else the recorded final
     function renderScoreCards() {
-      document.getElementById("lblPuzzle").textContent = `${state.seed + 1} of 5`;
+      document.getElementById("lblPuzzle").innerHTML =
+        `<span class="txt-long">${state.seed + 1} of 5</span><span class="txt-short">${state.seed + 1}/5</span>`;
       const rec = (state.puzzleScores && state.puzzleScores[state.seed]) || {};
       [["bayes", "valBayesPuzzle"], ["gemini", "valGeminiPuzzle"]].forEach(([mode, id]) => {
         const el = document.getElementById(id);
@@ -1132,35 +1166,6 @@
       ctx.closePath();
     }
 
-    // Small text label with a background box, kept inside the canvas
-    function pill(ctx, text, x, y, W, fg, bg, border, side = "right") {
-      ctx.save();
-      ctx.font = '600 11px "Inter", sans-serif';
-      const tw = ctx.measureText(text).width;
-      const w = tw + 14, h = 20;
-      let bx;
-      if (side === "left") {   // left of the point; flip right only if it would leave the canvas
-        bx = x - 14 - w;
-        if (bx < 4) bx = x + 14;
-      } else {
-        bx = x + 12;
-        if (bx + w > W - 4) bx = x - 12 - w;
-      }
-      bx = Math.max(4, bx);
-      const by = y - h / 2;
-      roundRect(ctx, bx, by, w, h, 5);
-      ctx.fillStyle = bg;
-      ctx.fill();
-      ctx.strokeStyle = border;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.fillStyle = fg;
-      ctx.textAlign = "left";
-      ctx.textBaseline = "middle";
-      ctx.fillText(text, bx + 7, by + h / 2 + 0.5);
-      ctx.restore();
-    }
-
     /* ------------------------------------------------------------------ */
     /* Rendering                                                            */
     /* ------------------------------------------------------------------ */
@@ -1343,7 +1348,8 @@
         ctx.textAlign = "center";
         ctx.fillStyle = glow > 0 ? C.accent : C.label;
         const crowded = j > 0 && x - mags[j - 1].x < 24;   // close pair (narrow screens): label below instead
-        ctx.fillText(magName(d.p, j), x, crowded ? yB + blockH + 11 : yT - blockH - 4);
+        m.labelY = crowded ? yB + blockH + 11 : yT - blockH - 4;
+        if (!(drag && drag.view === view && drag.j === j)) ctx.fillText(magName(d.p, j), x, m.labelY);
 
         if (editable) {
           // invisible drag zone: the magnet's whole column, never overlapping its neighbours
@@ -1547,15 +1553,27 @@
         view.hits.push({ type: "loss", x: lx, y: ly, r: 9 });
       }
 
-      // --- small label for the hovered / dragged magnet (Play) ---------------------------
-      if (editable && active !== null && active !== undefined && mags[active]) {
-        const m = mags[active];
+      // --- while dragging: the value next to the magnet's name at the plot edge -------------
+      // (outside the tube, so it never covers the beam or the sensor rings)
+      if (editable && drag && drag.view === view && mags[drag.j]) {
+        const m = mags[drag.j];
         const mrad = m.push * 1000;
-        const txt = `${magName(d.p, active)}: ${mrad >= 0 ? "+" : "−"}${Math.abs(mrad).toFixed(2)} mrad`;
-        // left of the pointer, so it never covers the sensor ring to the right
-        const px = view.pointer ? view.pointer.x : m.x;
-        const py = view.pointer ? view.pointer.y : (m.tipY === cy ? cy - 22 : m.tipY);
-        pill(ctx, txt, px, py, W, "#e6f7fc", "rgba(8, 24, 38, 0.92)", `rgba(${C.push}, 0.7)`, "left");
+        const txt = `${magName(d.p, drag.j)} · ${mrad >= 0 ? "+" : "−"}${Math.abs(mrad).toFixed(2)} mrad`;
+        ctx.save();
+        ctx.font = '600 10px "JetBrains Mono", monospace';
+        const w = ctx.measureText(txt).width + 10, h = 15;
+        const bx = Math.max(2, Math.min(W - w - 2, m.x - w / 2));
+        const by = m.labelY - 11;
+        roundRect(ctx, bx, by, w, h, 4);
+        ctx.fillStyle = "rgba(6, 12, 23, 0.95)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(242, 153, 74, 0.6)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.fillStyle = C.accent;
+        ctx.textAlign = "left";
+        ctx.fillText(txt, bx + 5, by + 11);
+        ctx.restore();
       }
     }
 
@@ -1759,6 +1777,11 @@
       updatePlayButton();
       sizeCanvases();
       connectWS();
+      // keep --bar-h = control bar height, so scrolling to a plot stops just below the sticky bar
+      const bar = document.querySelector(".sub-bar");
+      const setBarH = () => document.documentElement.style.setProperty("--bar-h", bar.offsetHeight + "px");
+      setBarH();
+      if (window.ResizeObserver) new ResizeObserver(setBarH).observe(bar);
       fetch("/api/puzzle_scores")
         .then(r => r.json())
         .then(j => { state.puzzleScores = j; renderScoreCards(); })
