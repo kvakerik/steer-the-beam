@@ -3,27 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Steer the Beam — CERN TT20</title>
-  <meta name="description" content="A CERN beam-steering puzzle as an AI benchmark. Try it yourself, then watch a Bayesian algorithm (67%) and Gemini (29%) on the same puzzle.">
+  <title>Steer the Beam: can AI steer a proton beam?</title>
+  <meta name="description" content="Steer a 400 GeV proton beam through a simulated beamline using only two-plate sensors, then see how an algorithm and Gemini do.">
   <link rel="canonical" href="https://kvakerik--steer-the-beam.modal.run/">
   <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
   <!-- Link previews (LinkedIn, Slack, X, ...): absolute URLs -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Steer the Beam">
   <meta property="og:url" content="https://kvakerik--steer-the-beam.modal.run/">
-  <meta property="og:title" content="Steer the Beam: can AI steer a CERN proton beam?">
-  <meta property="og:description" content="A CERN beam-steering puzzle as an AI benchmark. Try it yourself, then watch a Bayesian algorithm (67%) and Gemini (29%) on the same puzzle.">
+  <meta property="og:title" content="Steer the Beam: can AI steer a proton beam?">
+  <meta property="og:description" content="Steer a 400 GeV proton beam through a simulated beamline using only two-plate sensors, then see how an algorithm and Gemini do.">
   <meta property="og:image" content="https://kvakerik--steer-the-beam.modal.run/og.png">
   <meta property="og:image:secure_url" content="https://kvakerik--steer-the-beam.modal.run/og.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Steer the Beam: a proton beam threading the sensor rings of a 900 m CERN beam line">
+  <meta property="og:image:alt" content="Steer the Beam: a proton beam threading the sensor rings of a simulated 900 m beamline">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Steer the Beam: can AI steer a CERN proton beam?">
-  <meta name="twitter:description" content="A CERN beam-steering puzzle as an AI benchmark. Try it yourself, then watch a Bayesian algorithm (67%) and Gemini (29%) on the same puzzle.">
+  <meta name="twitter:title" content="Steer the Beam: can AI steer a proton beam?">
+  <meta name="twitter:description" content="Steer a 400 GeV proton beam through a simulated beamline using only two-plate sensors, then see how an algorithm and Gemini do.">
   <meta name="twitter:image" content="https://kvakerik--steer-the-beam.modal.run/og.png">
-  <meta name="twitter:image:alt" content="Steer the Beam: a proton beam threading the sensor rings of a 900 m CERN beam line">
+  <meta name="twitter:image:alt" content="Steer the Beam: a proton beam threading the sensor rings of a simulated 900 m beamline">
+  <!-- KaTeX for the "For physicists" blocks (pinned version + SRI) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderPhysicsMath()"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -305,37 +309,99 @@
       width: 100%; height: 5px; background: #243b61; border-radius: 3px; outline: none; cursor: pointer; accent-color: var(--accent);
     }
 
-    /* Gemini Reasoning Box */
+    [hidden] { display: none !important; }
+
+    /* Gemini reasoning: panel + overlay reader (light markdown, rendered safely) */
     .gemini-note { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
-    .gemini-reasoning-box {
-      background: #091220;
-      border: 1px solid #1a2a44;
-      border-radius: 6px;
-      padding: 12px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      line-height: 1.5;
-      color: #cbd5e1;
-      height: 140px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      margin-top: 8px;
+    .gem-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .gem-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .gem-actions .btn-action { padding: 5px 12px; font-size: 12px; }
+    .gem-panel {
+      height: clamp(280px, 50vh, 720px); overflow-y: auto; overflow-x: hidden; position: relative;
+      margin-top: 8px; padding: 12px 14px; background: #091220; border: 1px solid #1a2a44; border-radius: 6px;
+      font-size: 13.5px; line-height: 1.55; color: #d5deea;
     }
+    .md { overflow-wrap: anywhere; word-break: break-word; }
+    .md p { margin: 0 0 8px; }
+    .md ul { margin: 0 0 8px 20px; }
+    .md li { margin: 2px 0; }
+    .md code {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.88em; background: #13233d; border-radius: 4px;
+      padding: 0 4px; white-space: pre-wrap; word-break: break-all;
+    }
+    .md strong, .md .md-h { color: var(--text); font-weight: 700; }
+    .md-math { overflow-x: auto; overflow-y: hidden; }
+    .md-shot { border-left: 3px solid transparent; padding: 4px 0 4px 10px; margin-bottom: 6px; border-radius: 2px; }
+    .md-shot-h {
+      font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;
+    }
+    .md-shot.current { border-left-color: var(--accent); background: rgba(242, 153, 74, 0.07); }
+    .md-shot.current .md-shot-h { color: var(--accent); }
+    .md-empty { color: var(--text-muted); font-style: italic; }
+    .reader-backdrop {
+      position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center;
+      background: rgba(3, 8, 16, 0.74);
+    }
+    .reader-backdrop.open { display: flex; }
+    .reader {
+      width: 90vw; height: 85vh; max-width: 1400px; display: flex; flex-direction: column; overflow: hidden;
+      background: var(--card-bg); border: 1px solid #33507a; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+    }
+    .reader-head { display: flex; align-items: center; gap: 10px 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .reader-head h2 { font-size: 17px; }
+    .reader-sub { color: var(--text-muted); font-size: 13px; }
+    .reader-head .spacer { flex: 1; }
+    .reader-close {
+      width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-bg);
+      color: var(--text); font-size: 22px; line-height: 1; cursor: pointer;
+    }
+    .reader-close:hover { border-color: var(--accent); }
+    .reader-note { padding: 8px 16px 0; font-size: 12px; color: var(--text-muted); }
+    .reader-body {
+      flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; padding: 16px;
+      font-size: 16.5px; line-height: 1.6; color: #dfe6f0;
+    }
+    .reader-body > * { max-width: 75ch; margin-left: auto; margin-right: auto; }
+    .reader-body .md-shot-h { font-size: 13px; }
+    @media (max-width: 640px) {
+      .gem-panel { height: 55vh; font-size: 13px; }
+      .reader { width: 96vw; height: 90vh; }
+      .reader-body { font-size: 16px; padding: 12px; }
+    }
+
+    /* Explainers: "For physicists" blocks (KaTeX) and the two-plate sensor demo */
+    .about-box details.phys { margin-top: 12px; border: 1px solid var(--border); border-radius: 8px; background: #111f36; }
+    .about-box .about-content details.phys > summary {
+      font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: var(--cyan); padding: 8px 12px;
+    }
+    .about-box .about-content details.phys > summary::before { color: var(--cyan); }
+    .phys-body { padding: 0 14px 12px; font-size: 13px; line-height: 1.6; color: var(--text-muted); }
+    .phys-body p { margin-top: 8px; }
+    .phys-body .katex { color: var(--text); font-size: 1.04em; }
+    .phys-eq { overflow-x: auto; overflow-y: hidden; margin: 6px 0; padding: 2px 0; }
+    .phys-eq .katex-display { margin: 4px 0; }
+    .phys-credit { font-size: 11.5px; font-style: italic; margin-top: 10px; }
+    .plate-demo { margin: 12px 0 4px; max-width: 760px; background: #091220; border: 1px solid #1a2a44; border-radius: 8px; padding: 10px 12px; }
+    #plateCanvas { width: 100%; height: 230px; display: block; border: none; border-radius: 0; background: transparent; touch-action: pan-y; cursor: ew-resize; }
+    .plate-readout { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; font-size: 13px; color: var(--text-muted); }
+    .plate-readout b { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--gold); }
+    #plateSlider { margin-top: 6px; }
 
     /* Two collapsible plain-text sections at the bottom */
     .about-box {
       background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
       scroll-margin-top: calc(var(--bar-h, 64px) + 10px);   /* stop below the sticky bar */
     }
-    .about-box summary {
+    .about-box > summary, .about-box details.phys > summary {
       list-style: none; cursor: pointer; user-select: none; padding: 11px 16px;
       display: flex; align-items: center; gap: 8px;
       font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: var(--text);
     }
-    .about-box summary::-webkit-details-marker { display: none; }
-    .about-box summary::before { content: "▸"; color: var(--accent); display: inline-block; transition: transform 0.15s ease; }
-    .about-box[open] summary::before { transform: rotate(90deg); }
-    .about-box summary:hover { background: rgba(255, 255, 255, 0.03); }
+    .about-box > summary::-webkit-details-marker, .about-box details.phys > summary::-webkit-details-marker { display: none; }
+    .about-box > summary::before, .about-box details.phys > summary::before { content: "▸"; color: var(--accent); display: inline-block; transition: transform 0.15s ease; }
+    .about-box[open] > summary::before, .about-box details.phys[open] > summary::before { transform: rotate(90deg); }
+    .about-box > summary:hover, .about-box details.phys > summary:hover { background: rgba(255, 255, 255, 0.03); }
     .about-content {
       padding: 2px 16px 14px; border-top: 1px solid var(--border);
       font-size: 13px; line-height: 1.6; color: var(--text-muted);
@@ -376,7 +442,7 @@
       <img class="brand-icon" src="/static/icon.svg" alt="" width="44" height="44">
       <div>
         <h1>Steer the Beam</h1>
-        <p>CERN fires protons down a 900 m tube, and 22 magnets aim them. The goal: centre the beam to 95%, good enough for physics. Can you do it better than an AI?</p>
+        <p>Protons fly down a 900 m tube, and 22 magnets aim them. The goal: centre the beam to 95%, good enough for physics. Can you do it better than an AI?</p>
       </div>
     </div>
     <div id="wsStatus" class="ws-status disconnected">
@@ -501,7 +567,8 @@
         <span class="legend-item">equal bars = beam centred</span>
         <span class="legend-item">they jump on every shot: the readings are noisy</span>
         <span class="legend-item">once the beam is lost, sensors only see noise</span>
-        <span class="legend-item"><span class="lg-drag">↕</span>you can still drag the magnets</span>
+        <span class="legend-item" id="aiLegendLoss"><span class="lg-loss"></span>where the beam was lost (the agent only sees the sensors after it go dark)</span>
+        <span class="legend-item" id="aiLegendDrag"><span class="lg-drag">↕</span>you can still drag the magnets</span>
         <span class="legend-item ai-tip" id="aiTip">Tip: start from the left. Adjust one magnet until the next sensor’s two plates read equal, then move on to the next one.</span>
       </div>
     </div>
@@ -534,11 +601,15 @@
 
     <!-- Gemini Reasoning Card -->
     <div class="canvas-card" id="cardGeminiReasoning" style="display:none;">
-      <div class="canvas-title">
-        <span>Gemini Reasoning Transcript</span>
+      <div class="gem-head">
+        <div class="canvas-title"><span>Gemini’s reasoning, shot by shot</span></div>
+        <div class="gem-actions">
+          <button class="btn-action" id="panelFollow" hidden onclick="followCurrent('panel')">Follow current shot</button>
+          <button class="btn-action" id="btnExpand" aria-haspopup="dialog" onclick="openReader()">⤢ Expand</button>
+        </div>
       </div>
-      <div class="gemini-note">Gemini’s numbers use the machine’s sign convention: a positive number pushes the opposite way to our arrows.</div>
-      <div id="geminiBox" class="gemini-reasoning-box">Gemini thoughts and actions will stream here during replay...</div>
+      <div class="gemini-note">Gemini’s numbers use the machine’s sign convention: a positive number pushes the opposite way to our arrows. Its log has no shot markers, so the reasoning steps are spread evenly over the shots.</div>
+      <div id="geminiBox" class="gem-panel md" tabindex="0" aria-label="Gemini's reasoning"><p class="md-empty">Press Play: Gemini’s reasoning appears here, shot by shot.</p></div>
     </div>
 
     <!-- Background and technical details (collapsible, plain text) -->
@@ -549,13 +620,89 @@
         <p>This website is a simulation of that problem, built as a test for AI agents. The agent sees only what an operator sees: 21 sensors, each made of two thin metal plates that the beam passes through. If both plates get the same amount of beam, it’s centred. Each try (“shot”) gives only a small, noisy clue, and the true magnet errors stay hidden.</p>
         <p><strong>Why it matters:</strong> AI is starting to be trusted with real scientific work. This task can’t be solved by guessing or by recalling an answer: you have to combine noisy clues over many shots and reason about what you can’t see. A dedicated statistical algorithm centres the beam to 67% on average; Gemini, one of today’s best AI models, only to 29%.</p>
         <p><strong>Why the goal is 95%, not 100%:</strong> the sensors are noisy, and the real machine never matches its blueprint exactly, so perfect centring isn’t reachable. Above about 95% the beam passes the whole line cleanly, which is good enough for the experiments. 95% is the “solved” threshold of the CERN study this project builds on.</p>
-        <p class="about-note">Independent project based on a published CERN study. Not affiliated with or endorsed by CERN.</p>
+        <p class="about-note">Independent project, not affiliated with or endorsed by CERN. Physics based on Adam Štafa's TT20 beam-steering report.</p>
+      </div>
+    </details>
+
+
+    <details class="about-box">
+      <summary>Where the beam comes from</summary>
+      <div class="about-content">
+        <p>CERN’s SPS accelerator speeds protons up to 400 GeV, then slowly “peels” them off over a few seconds (slow extraction) into a transfer line called TT20, built in the 1970s.</p>
+        <p>TT20 carries the beam about 600 m down an 11% slope, under CERN’s Prévessin site, to splitter magnets that divide it between three targets (T2, T4, T6) in the North Area.</p>
+        <p>Those targets produce secondary particle beams for experiments and detector tests. An off-centre beam is lost: wasted beam time for everyone downstream, and radiation where you don’t want it.</p>
+        <p>Steering magnets (correctors) along the line nudge the beam; sensors tell operators where it went.</p>
+        <p>After every annual shutdown, operators re-thread TT20 by hand, a job that takes several hours. Automating it is what this research is about, and what this game lets you try.</p>
+      </div>
+    </details>
+
+    <details class="about-box" id="aboutSensors">
+      <summary>The sensors: two plates side by side</summary>
+      <div class="about-content">
+        <p>Each sensor is a pair of very thin metal foils side by side with a tiny gap, across the beam’s path. Some measure left/right, others up/down. The real ones are called BSPs (split-foil secondary-emission monitors).</p>
+        <p>Protons passing through a foil knock electrons out of the metal (“secondary emission”), so a small current flows. More beam on a foil means more current.</p>
+        <p>Equal currents mean the beam is centred. One plate much stronger means the beam is off to that side. Both near zero means the beam missed or was lost upstream. Even then there’s a little background current, so “nothing” is never exactly zero.</p>
+        <p><strong>Why it matters:</strong> the plates barely disturb the beam and are robust, but they only say which side the beam leans and roughly by how much, never its exact position. With noise and magnets that don’t behave exactly as labelled, that’s what makes steering a puzzle.</p>
+        <div class="plate-demo">
+          <canvas id="plateCanvas" aria-label="A sensor: two plates and the beam spot. Drag the spot left or right."></canvas>
+          <input type="range" id="plateSlider" min="-1" max="1" step="0.001" value="0" aria-label="Beam position across the two plates">
+          <div class="plate-readout">
+            <span>Centring: <b id="plateCentring">—</b></span>
+            <span id="plateStatus"></span>
+          </div>
+        </div>
+        <p class="tip-muted">Try it: drag the glowing beam spot (or use the slider). The bars are the two plate currents, with the same formulas and background noise as the game.</p>
+        <details class="phys">
+          <summary>For physicists</summary>
+          <div class="phys-body">
+            <p>Fraction of a Gaussian beam (width $\sigma$) centred at $x$ intercepted by each foil of length $L$ ($\Phi$ = standard normal CDF):</p>
+            <div class="phys-eq">$$I_1(x)=\Phi\!\Big(\tfrac{-x}{\sigma}\Big)-\Phi\!\Big(\tfrac{-L-x}{\sigma}\Big),\qquad I_2(x)=\Phi\!\Big(\tfrac{L-x}{\sigma}\Big)-\Phi\!\Big(\tfrac{-x}{\sigma}\Big)$$</div>
+            <p>In our model the two foils touch at $x=0$ (no gap), and each is $L=10\,\sigma_0$ long, where $\sigma_0$ is the design beam size at that monitor. $L$ is fixed in millimetres, so on the perturbed machine $L/\sigma$ is close to, but not exactly, 10.</p>
+            <p>Background noise only ever adds current, independently per foil and per shot:</p>
+            <div class="phys-eq">$$\tilde I_j=I_j+\epsilon_j,\qquad \epsilon_j\sim\mathcal U[0,\nu]$$</div>
+            <p>The agent is told $\nu=0.25$. In each puzzle the true level is drawn around it, $\nu=0.25\,e^{\mathcal N(0,\,0.4^2)}$ (the “±40 %” background spread).</p>
+            <p>Reported to the agent per monitor: ratio $r=\tilde I_1/(\tilde I_1+\tilde I_2)$ and level $\ell=(\tilde I_1+\tilde I_2)/I_{\max}$, with $I_{\max}=2\Phi(L/\sigma)-1$ the intensity of a centred beam.</p>
+            <p>Symmetry and goal (the score uses the noise-free currents of the true machine, over all $N=21$ monitors):</p>
+            <div class="phys-eq">$$S=\sqrt{1-\frac{|I_1-I_2|}{I_1+I_2}},\qquad \hat S=S\,\frac{I_1+I_2}{I_{\max}},\qquad \text{solved when }\ \frac1N\sum_k \hat S_k\ \ge 0.95$$</div>
+            <p>Multiplying by the level means a beam that misses the plates can’t look “centred” just because both plates read only background. The website’s “centring %” is $100\cdot\frac1N\sum_k \hat S_k$.</p>
+            <p class="phys-credit">Model and notation: Adam Štafa, ‘Algorithms for Steering the CERN TT20 Transfer Line’ (2026). Our lattice is synthetic and TT20-like, not CERN machine data.</p>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="about-box">
+      <summary>How the simulation works</summary>
+      <div class="about-content">
+        <p>Each steering magnet gives the beam a small sideways kick. The beam then swings back and forth around the centre line as it travels (a betatron oscillation), so one kick shows up differently at each sensor, sometimes on the opposite side.</p>
+        <p>We compute this with the standard linear optics model for transfer lines: a “response” from every magnet to every sensor.</p>
+        <p>The beam has a realistic bell-shaped (Gaussian) width set by its energy and emittance, so a sensor sees a spread-out spot, not a point.</p>
+        <p>Every puzzle hides errors: each magnet starts mis-set by an unknown offset, magnets are slightly stronger or weaker than their dial says, and the beam enters the line with slightly different focusing than the design. You (or the AI) must work these out from the readings.</p>
+        <p>Sensor readings include background noise.</p>
+        <p>The beam pipe has walls: if the beam hits a wall anywhere, it’s lost, and every sensor after that point goes dark (in both views).</p>
+        <p>Goal: average centring across all sensors ≥ 95% within the shot budget (60 shots).</p>
+        <p><strong>Honesty note:</strong> the beamline is a synthetic, TT20-like model (900 m long, with the same 22 steering magnets and 21 sensors as TT20), not CERN machine data. The physics follows Adam Štafa’s TT20 report.</p>
+        <details class="phys">
+          <summary>For physicists</summary>
+          <div class="phys-body">
+            <p>Linear, uncoupled optics; each plane independent ($\mu$ in units of $2\pi$):</p>
+            <div class="phys-eq">$$x_i=\sum_j R_{ij}\,\theta_j,\qquad R_{ij}=\begin{cases}\sqrt{\beta_i\beta_j}\,\sin\big(2\pi(\mu_i-\mu_j)\big), &amp; \mu_i&gt;\mu_j\\ 0, &amp; \text{otherwise}\end{cases}$$</div>
+            <p>Each corrector starts mis-steered by an unknown offset $\Delta\theta_j\sim\mathcal U[-\theta_{\max},\theta_{\max}]$ (the thing to discover). Our simulator also applies the hidden corrector gains $g_j$ inside the expression, with $R$ built from the perturbed optics; with commanded settings $\theta$:</p>
+            <div class="phys-eq">$$\mathbf{x}=R\,(\Delta\boldsymbol\theta-\mathbf g\odot\boldsymbol\theta)$$</div>
+            <p>Each puzzle randomises (“medium” spreads): corrector gains $g_j=e^{\mathcal N(0,\,0.02^2)}$ (±2 %); initial $\beta_x$ ±50 % and $\beta_y$ ±10 % (log-normal); initial $\alpha_x$ ±1.0 and $\alpha_y$ ±0.3 (additive); emittance ±20 % per plane; background level ±40 %. The perturbed initial Twiss parameters are transported through the design optics, which gives beta-beating and shifted phases, so the model the agent knows never matches the machine exactly. Quadrupole-gradient errors are not modelled.</p>
+            <p>Beam size: $\sigma_i=\sqrt{\beta_i\,\varepsilon}$, $\varepsilon=\varepsilon_n/(\beta\gamma)$, $\varepsilon_n=2\,\mu\text{m}$, $\beta\gamma=427.35$.</p>
+            <p>Aperture: rectangular beam pipe with half-widths $a_h, a_v$ between 22 and 34 mm along the line, checked every 5 m and at every magnet and monitor. The beam is lost at the first checkpoint where $|x_h|&gt;a_h$ or $|x_v|&gt;a_v$; every monitor after that reads background only (both planes).</p>
+            <p>Counts: H 10 correctors / 11 monitors, V 12 correctors / 10 monitors; line length 900 m; maximum kick $\theta_{\max}=0.45$ mrad; 60 shots per puzzle.</p>
+            <p class="phys-credit">Model and notation: Adam Štafa, ‘Algorithms for Steering the CERN TT20 Transfer Line’ (2026). Our lattice is synthetic and TT20-like, not CERN machine data.</p>
+          </div>
+        </details>
       </div>
     </details>
 
     <details class="about-box">
       <summary>Technical details</summary>
       <div class="about-content">
+        <p>Modelled on CERN’s TT20 transfer line, which carries 400 GeV protons from the SPS to the North Area targets.</p>
         <p><strong>Machine:</strong> a simulated CERN transfer line (900 m, 400 GeV protons), with 22 corrector magnets (12 vertical = M1–M12, 10 horizontal = M13–M22) and 21 split-plate sensors. The simulation includes sensor noise and a slightly perturbed real machine compared with the blueprint the agent receives. It’s based on a published CERN study on beam steering (A. Štafa, 2026).</p>
         <p><strong>What you see on the plot:</strong> the tube is the pipe wall, and the orange line is the true beam path (never shown to the agent, see “AI view”). The arrows show how hard each magnet pushes; the hidden errors are not drawn.</p>
         <p><strong>Sensor rings:</strong> the white dot shows how far the beam passes from the centre, measured in beam widths. Inside the small circle = centred (green); inside the ring = off-centre (yellow); outside = far off.</p>
@@ -568,11 +715,36 @@
         <p><strong>The algorithm:</strong> a Bayesian particle filter. It keeps 100,000 guesses about the hidden magnet errors and updates them after every shot. It uses exactly the same information and controls as the AI.</p>
         <p><strong>The AI:</strong> Gemini 3.8 Flash, run as an autonomous agent in a general-purpose coding harness (OpenCode via Harbor). It has a shell, can write and run its own code, and has the four beamline tools. On the “Watch Gemini” tab you can read its full reasoning in the reasoning panel, step by step.</p>
         <p><strong>Room to improve, on both sides:</strong> Gemini might do better with a task-specific harness, e.g. tools built just for steering the beam instead of a general coding setup (though then the tool does part of the reasoning). And the algorithm isn’t the ceiling either: it reaches about 67%, not the 95% goal, and more advanced methods, such as a trained reinforcement-learning policy, could steer better.</p>
+        <details class="phys">
+          <summary>For physicists</summary>
+          <div class="phys-body">
+            <p>Benchmark score (our reward, not the paper’s), with $S_0$ and $S_f$ the true mean $\hat S$ at the start (all magnets at 0) and at the end:</p>
+            <div class="phys-eq">$$\text{progress}=\operatorname{clip}\!\left(\frac{S_f-S_0}{0.95-S_0},\,0,\,1\right),\qquad \text{reward}=0.8\,\text{progress}+0.2\,\mathbb{1}[S_f\ge 0.95]\,\max\!\left(0,\,1-\frac{n_{\text{shots}}}{60}\right)$$</div>
+            <p>Doing nothing or stopping early scores ≈ 0, so the only way to score is to actually steer.</p>
+            <p>Bayes reference (our settings): particle filter with 100,000 particles and roughening 0.2, with an agent seed independent of the puzzle seed. The report uses roughening 0.5.</p>
+            <p class="phys-credit">Model and notation: Adam Štafa, ‘Algorithms for Steering the CERN TT20 Transfer Line’ (2026). Our lattice is synthetic and TT20-like, not CERN machine data.</p>
+          </div>
+        </details>
       </div>
     </details>
   </div>
 
-  <footer class="site-footer">Independent project based on a published CERN study. Not affiliated with or endorsed by CERN.</footer>
+  <!-- Gemini reasoning reader (overlay) -->
+  <div class="reader-backdrop" id="readerBackdrop" aria-hidden="true">
+    <div class="reader" role="dialog" aria-modal="true" aria-labelledby="readerTitle">
+      <div class="reader-head">
+        <h2 id="readerTitle">Gemini’s reasoning</h2>
+        <span class="reader-sub" id="readerSub"></span>
+        <span class="spacer"></span>
+        <button class="btn-action" id="readerFollow" hidden onclick="followCurrent('reader')">Follow current shot</button>
+        <button class="reader-close" id="readerClose" aria-label="Close the reader" onclick="closeReader()">×</button>
+      </div>
+      <p class="reader-note">Gemini’s log has no shot markers, so its reasoning steps are spread evenly over the shots. Its numbers use the machine’s sign convention.</p>
+      <div class="reader-body md" id="readerBody" tabindex="0" aria-label="Gemini's reasoning, shot by shot"></div>
+    </div>
+  </div>
+
+  <footer class="site-footer">Independent project, not affiliated with or endorsed by CERN. Physics based on Adam Štafa's TT20 beam-steering report.</footer>
 
   <script>
     const state = {
@@ -733,12 +905,9 @@
         renderYouCard();
       }
 
-      if (data.agent_text && state.tab === "gemini") {
-        state.agent_text = data.agent_text;
-        const box = document.getElementById("geminiBox");
-        box.textContent = state.agent_text;
-        box.scrollTop = box.scrollHeight;
-      }
+      // Gemini reasoning: all sections arrive with the start of a replay, then are revealed shot by shot
+      if (data.agent_sections) setGeminiSections(data.agent_sections);
+      if (state.tab === "gemini" && gem.groups.length) updateGeminiPanels(data.shot, data.done);
 
       // Fly the particle: every shot in Watch, and in Play once a change is finished
       let launch = !keepLocalTheta;
@@ -920,6 +1089,7 @@
       state.blindActive = state.tab === "play" && state.aiView;
       state.geminiRun = 0;
       renderYouCard();
+      resetGeminiPanels();
       state.run = "idle";
       updatePlayButton();
       sendInit();
@@ -1027,8 +1197,13 @@
       hint.textContent = hintText();
       document.getElementById("titleV").textContent = isPlay
         ? (ai ? "AI view: what the AI gets after each shot" : "Side view: 12 up–down magnets (M1–M12) · the beam flies left → right")
-        : "Side view: 12 up–down magnets (M1–M12)";
-      document.getElementById("btnAiView").style.display = isPlay ? "inline-flex" : "none";
+        : (ai ? "Side view: 12 up–down magnets (M1–M12) · AI view" : "Side view: 12 up–down magnets (M1–M12)");
+      document.getElementById("titleH").textContent = ai
+        ? "Top view: 10 left–right magnets (M13–M22) · AI view" : "Top view: 10 left–right magnets (M13–M22)";
+      document.getElementById("btnAiView").style.display = "inline-flex";   // AI view works in all three tabs
+      document.getElementById("aiLegendDrag").style.display = isPlay ? "" : "none";
+      document.getElementById("aiTip").style.display = isPlay ? "" : "none";
+      document.getElementById("aiLegendLoss").style.display = isPlay ? "none" : "";
       const b = document.getElementById("btnAiView");
       b.textContent = state.aiView ? "🤖 AI view: on" : "🤖 AI view: off";
       b.className = state.aiView ? "btn-toggle on" : "btn-toggle";
@@ -1066,14 +1241,17 @@
 
     function toggleAiView() {
       state.aiView = !state.aiView;
-      if (state.aiView) startBlindAttempt(); else endBlindAttempt();
+      if (state.tab === "play") {   // in Play, AI view is a blind attempt; in the Watch tabs just another view
+        if (state.aiView) startBlindAttempt(); else endBlindAttempt();
+      }
       views.v.tip.style.display = "none";
+      views.h.tip.style.display = "none";
       applyTexts();
       requestFrame();
     }
 
     function isAiView() {
-      return state.tab === "play" && state.aiView;
+      return !!state.aiView;   // one toggle for all three tabs
     }
 
     function switchTab(t) {
@@ -1088,6 +1266,7 @@
       state.sliderActive = false;
       state.pendingLaunch = false;
       drag = null;
+      resetGeminiPanels();
       views.v.tip.style.display = "none";
       views.h.tip.style.display = "none";
 
@@ -1125,6 +1304,7 @@
         sendWS({ type: "resume", speed: state.speed });
       } else {
         if (state.tab === "gemini" && state.run === "done") state.geminiRun += 1;   // Play again = next recorded run
+        if (state.tab === "gemini") resetGeminiPanels();
         state.run = "playing";
         const msg = { type: state.tab === "bayes" ? "start_bayes" : "start_gemini", seed: state.seed, speed: state.speed };
         if (state.tab === "gemini") {
@@ -1518,6 +1698,9 @@
         return { s, i, st, lit, flash, col, x: toX(s) };
       });
 
+      // room between neighbouring sensors (AI view adds each sensor's estimated centring to its label)
+      const gateGap = gates.length > 1 ? Math.min(...gates.slice(1).map((g, k) => g.x - gates[k].x)) : 999;
+
       gates.forEach(g => {
         ctx.strokeStyle = g.col;
         ctx.globalAlpha = g.lit ? 0.55 : 0.8;
@@ -1529,7 +1712,8 @@
       });
 
       // --- the beam (hidden in AI view) ------------------------------------------
-      const pts = ai ? [] : beamPath(d);
+      const fullPath = beamPath(d);
+      const pts = ai ? [] : fullPath;
       const strokePath = (list) => {
         ctx.beginPath();
         list.forEach((q, k) => { const x = toX(q.s), y = toY(q.y); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
@@ -1634,7 +1818,8 @@
         ctx.font = '9px "JetBrains Mono", monospace';
         ctx.textAlign = "center";
         ctx.fillStyle = ai ? C.label : (g.lit ? (g.st === "none" ? C.label : gateColour(g.st)) : C.dim);
-        ctx.fillText(`S${g.i + 1}`, g.x, padT + plotH + 16);
+        const est = ai && gateGap >= 62 ? ` ${Math.round(measuredCentring(d.obs[g.i]) * 100)}%` : "";
+        ctx.fillText(`S${g.i + 1}${est}`, g.x, padT + plotH + 16);
 
         view.hits.push({ type: "gate", i: g.i, x: g.x, y: cy, rx: ringRx, ry: ringRy });
       });
@@ -1661,11 +1846,13 @@
       }
 
       // --- loss point: flash, then a red marker (its tooltip explains where it was lost) ---
-      if (!ai && d.lossS !== null && pts.length > 0 && !flying) {
-        const last = pts[pts.length - 1];
+      // In the Watch tabs the AI view still marks the loss point; in Play it stays hidden (blind attempts)
+      const lossPts = ai ? fullPath : pts;
+      if ((!ai || state.tab !== "play") && d.lossS !== null && lossPts.length > 0 && !flying) {
+        const last = lossPts[lossPts.length - 1];
         const lx = toX(last.s), ly = toY(last.y);
         const since = anim ? now - anim.end : 9999;
-        if (since >= 0 && since < 700) {
+        if (!ai && since >= 0 && since < 700) {
           const k = since / 700;
           ctx.save();
           ctx.strokeStyle = C.loss;
@@ -1764,7 +1951,9 @@
     function gateTipHtml(d, i) {
       const title = `<div class="tip-title">Sensor S${i + 1} <span class="tip-muted">· ${Math.round(d.sSem[i])} m</span></div>`;
       if (isAiView()) {
-        return title + `<div class="tip-muted" style="margin-bottom:3px;">What the AI gets: two noisy plate readings. It has to work out where the beam is.</div>` + plateBars(d, i);
+        return title + `<div class="tip-muted" style="margin-bottom:3px;">What the AI gets: two noisy plate readings. It has to work out where the beam is.</div>` + plateBars(d, i) +
+          `<div style="margin-top:3px;">Centring from these readings: <b>${Math.round(measuredCentring(d.obs[i]) * 100)}%</b></div>` +
+          `<div class="tip-muted">(estimated from the noisy currents; the true value stays hidden)</div>`;
       }
       const st = gateState(d, i);
       const xmm = (d.xSem[i] || 0) * 1000;
@@ -1786,6 +1975,9 @@
     function lossTipHtml(d) {
       const where = Math.round(d.lossS);
       const title = `<div class="tip-title" style="color:var(--danger)">Beam lost at ${where} m</div>`;
+      if (isAiView()) {
+        return title + `<div>The agent doesn’t see this point. It only notices that the sensors after it read nothing but background.</div>`;
+      }
       if (d.lostHere) {
         return title + `<div>The beam hits the wall of the tube here and stops. Sensors further on get no beam.</div>`;
       }
@@ -1907,6 +2099,406 @@
     }
 
     /* ------------------------------------------------------------------ */
+    /* AI view: centring estimated from the noisy readings                  */
+    /* ------------------------------------------------------------------ */
+    // Same formula as the game's centring, but on the noisy currents the agent gets:
+    // sqrt(1 - |I1 - I2| / (I1 + I2)) * level, with |I1 - I2| / (I1 + I2) = |2r - 1|.
+    function measuredCentring(o) {
+      if (!o) return 0;
+      const v = Math.sqrt(Math.max(0, 1 - Math.abs(2 * o.ratio - 1))) * o.level;
+      return Math.max(0, Math.min(1, v));
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Gemini reasoning: safe light markdown, shot sections, reader          */
+    /* ------------------------------------------------------------------ */
+    const gem = { groups: [], html: [], shown: 0, current: -1, follow: { panel: true, reader: true } };
+    let readerReturnFocus = null;
+
+    function escapeHtml(t) {
+      return String(t).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+    }
+
+    function mathHtml(tex, display) {   // KaTeX output only (trust off); null if KaTeX is missing or the TeX is invalid
+      if (!window.katex) return null;
+      try {
+        return window.katex.renderToString(tex, { displayMode: display, throwOnError: true, trust: false, strict: "ignore", maxSize: 20, maxExpand: 300 });
+      } catch (_) {
+        return null;
+      }
+    }
+
+    // Light markdown for the transcript. The text is HTML-escaped first; only our own tags are added.
+    function renderMarkdown(src) {
+      const slots = [];
+      const keep = html => "\uE000" + (slots.push(html) - 1) + "\uE001";
+      let t = String(src).replace(/^\[Reasoning\]:\s*/, "");
+      t = t.replace(/`([^`\n]{1,400})`/g, (m, code) => keep(`<code>${escapeHtml(code)}</code>`));
+      t = t.replace(/\$\$([\s\S]{1,600}?)\$\$/g, (m, tex) => {
+        const h = mathHtml(tex, true);
+        return h ? keep(`<div class="md-math">${h}</div>`) : m;
+      });
+      t = t.replace(/(^|[^\\$\w])\$([^\s$](?:[^$\n]{0,198}[^\s$])?)\$(?![\d$])/g, (m, pre, tex) => {   // "$\mu$rad" ok, "$5 or $10" not
+        const h = mathHtml(tex, false);
+        return h ? pre + keep(h) : m;
+      });
+      t = escapeHtml(t);
+      const inline = x => x
+        .replace(/\*\*([^*\n]+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/(^|[^*\w])\*(?!\s)([^*\n]+?)\*(?![*\w])/g, "$1<em>$2</em>")
+        .replace(/(^|[^\w])_(?!\s)([^_\n]+?)_(?!\w)/g, "$1<em>$2</em>");
+      const out = [];
+      let para = [], list = [];
+      const flushPara = () => { if (para.length) { out.push(`<p>${para.map(inline).join("<br>")}</p>`); para = []; } };
+      const flushList = () => { if (list.length) { out.push(`<ul>${list.map(li => `<li>${inline(li)}</li>`).join("")}</ul>`); list = []; } };
+      for (const raw of t.split("\n")) {
+        const line = raw.replace(/\s+$/, "");
+        const li = line.match(/^\s*(?:[-*•]|\d+[.)])\s+(.+)$/);
+        const hd = line.match(/^\s*#{1,6}\s+(.+)$/);
+        if (li) { flushPara(); list.push(li[1]); }
+        else if (hd) { flushPara(); flushList(); out.push(`<p class="md-h">${inline(hd[1])}</p>`); }
+        else if (line.trim() === "") { flushPara(); flushList(); }
+        else { flushList(); para.push(line); }
+      }
+      flushPara();
+      flushList();
+      return out.join("").replace(/\uE000(\d+)\uE001/g, (m, k) => slots[Number(k)]);
+    }
+
+    function geminiContainers() {
+      return [document.getElementById("geminiBox"), document.getElementById("readerBody")];
+    }
+
+    function setGeminiSections(sections) {
+      gem.groups = [];
+      for (const sct of sections || []) {
+        const last = gem.groups[gem.groups.length - 1];
+        if (last && last.shot === sct.shot) last.texts.push(sct.text);
+        else gem.groups.push({ shot: sct.shot, texts: [sct.text] });
+      }
+      gem.html = gem.groups.map(() => null);
+      gem.shown = 0;
+      gem.current = -1;
+      gem.follow.panel = gem.follow.reader = true;
+      geminiContainers().forEach(el => { el.innerHTML = '<p class="md-empty">Replay started: Gemini’s reasoning appears with the shots.</p>'; });
+      updateFollowButtons();
+      updateReaderSub();
+    }
+
+    function resetGeminiPanels() {
+      gem.groups = [];
+      gem.html = [];
+      gem.shown = 0;
+      gem.current = -1;
+      gem.follow.panel = gem.follow.reader = true;
+      geminiContainers().forEach(el => { el.innerHTML = '<p class="md-empty">Press Play: Gemini’s reasoning appears here, shot by shot.</p>'; });
+      updateFollowButtons();
+      updateReaderSub();
+    }
+
+    function groupHtml(i) {   // rendered once per section, then reused
+      if (gem.html[i] === null) {
+        const g = gem.groups[i];
+        gem.html[i] = `<h4 class="md-shot-h">Shot ${g.shot}</h4>` + g.texts.map(renderMarkdown).join("");
+      }
+      return gem.html[i];
+    }
+
+    function updateGeminiPanels(shot, done) {
+      let upto = 0;
+      while (upto < gem.groups.length && (done || gem.groups[upto].shot <= shot)) upto++;
+      const containers = geminiContainers();
+      if (gem.shown === 0 && upto > 0) containers.forEach(el => { el.innerHTML = ""; });
+      for (let i = gem.shown; i < upto; i++) {
+        const html = groupHtml(i);
+        containers.forEach(el => {
+          const sec = document.createElement("section");
+          sec.className = "md-shot";
+          sec.dataset.i = String(i);
+          sec.innerHTML = html;
+          el.appendChild(sec);
+        });
+      }
+      gem.shown = Math.max(gem.shown, upto);
+      const cur = done ? -1 : upto - 1;   // the current shot is highlighted while the replay runs
+      if (cur !== gem.current) {
+        containers.forEach(el => {
+          el.querySelectorAll(".md-shot.current").forEach(n => n.classList.remove("current"));
+          if (cur >= 0) {
+            const n = el.querySelector(`.md-shot[data-i="${cur}"]`);
+            if (n) n.classList.add("current");
+          }
+        });
+        gem.current = cur;
+      }
+      if (gem.follow.panel) scrollToCurrent("panel");
+      if (gem.follow.reader && readerOpen()) scrollToCurrent("reader");
+      updateFollowButtons();
+      updateReaderSub();
+    }
+
+    function scrollToCurrent(which) {
+      const el = document.getElementById(which === "panel" ? "geminiBox" : "readerBody");
+      const cur = el.querySelector(".md-shot.current") || el.querySelector(".md-shot:last-of-type");
+      if (cur) el.scrollTop = Math.max(0, cur.offsetTop - 8);
+    }
+
+    function followCurrent(which) {
+      gem.follow[which] = true;
+      scrollToCurrent(which);
+      updateFollowButtons();
+    }
+
+    function updateFollowButtons() {
+      document.getElementById("panelFollow").hidden = gem.follow.panel || gem.shown === 0;
+      document.getElementById("readerFollow").hidden = gem.follow.reader || gem.shown === 0;
+    }
+
+    // Scrolling by hand pauses auto-follow (wheel, touch, keys, or dragging the scrollbar)
+    function watchManualScroll(el, which) {
+      const stop = () => {
+        if (gem.shown > 0 && gem.follow[which]) { gem.follow[which] = false; updateFollowButtons(); }
+      };
+      el.addEventListener("wheel", stop, { passive: true });
+      el.addEventListener("touchstart", stop, { passive: true });
+      el.addEventListener("keydown", e => {
+        if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(e.key)) stop();
+      });
+      el.addEventListener("pointerdown", e => { if (e.offsetX > el.clientWidth) stop(); });
+    }
+
+    function readerOpen() {
+      return document.getElementById("readerBackdrop").classList.contains("open");
+    }
+
+    function updateReaderSub() {
+      const gr = geminiRunInfo();
+      let txt = `Puzzle ${state.seed + 1} · run ${gr.idx + 1} of ${gr.n || 1}`;
+      if (gem.shown > 0) {
+        const lastShot = gem.groups[gem.groups.length - 1].shot;
+        const idx = gem.current >= 0 ? gem.current : gem.shown - 1;
+        txt += gem.current >= 0 ? ` · shot ${gem.groups[idx].shot} of ${lastShot}` : ` · all ${lastShot} shots`;
+      }
+      document.getElementById("readerSub").textContent = txt;
+    }
+
+    function openReader() {
+      const bd = document.getElementById("readerBackdrop");
+      readerReturnFocus = document.activeElement;
+      bd.classList.add("open");
+      bd.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      gem.follow.reader = true;
+      updateReaderSub();
+      updateFollowButtons();
+      scrollToCurrent("reader");
+      document.getElementById("readerClose").focus();
+    }
+
+    function closeReader() {
+      const bd = document.getElementById("readerBackdrop");
+      if (!bd.classList.contains("open")) return;
+      bd.classList.remove("open");
+      bd.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      if (readerReturnFocus && readerReturnFocus.focus) readerReturnFocus.focus();
+      readerReturnFocus = null;
+    }
+
+    function initGeminiReader() {
+      const bd = document.getElementById("readerBackdrop");
+      bd.addEventListener("click", e => { if (e.target === bd) closeReader(); });   // click on the dimmed backdrop
+      document.addEventListener("keydown", e => {
+        if (!readerOpen()) return;
+        if (e.key === "Escape") { e.preventDefault(); closeReader(); return; }
+        if (e.key !== "Tab") return;
+        // keep keyboard focus inside the dialog
+        const items = [...bd.querySelectorAll("button, [tabindex='0']")].filter(n => !n.hidden && n.offsetParent !== null);
+        if (!items.length) return;
+        const first = items[0], last = items[items.length - 1];
+        if (!bd.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+        else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      });
+      watchManualScroll(document.getElementById("geminiBox"), "panel");
+      watchManualScroll(document.getElementById("readerBody"), "reader");
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Sensor demo: two plates and a Gaussian beam spot (simulator formulas) */
+    /* ------------------------------------------------------------------ */
+    const demo = { sigma: 0.432e-3, L: 4.318e-3, iMax: 1.0, nu: 0.25, x: 0, eps: [0.12, 0.12], shown: null, dragging: false, raf: null, lastNoise: 0 };
+
+    function erfApprox(z) {   // Abramowitz & Stegun 7.1.26, |error| < 1.5e-7
+      const t = 1 / (1 + 0.3275911 * Math.abs(z));
+      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-z * z);
+      return z >= 0 ? y : -y;
+    }
+    const normCdf = z => 0.5 * (1 + erfApprox(z / Math.SQRT2));
+
+    function demoCurrents(x) {   // eq. (2): plate 1 covers [-L, 0], plate 2 covers [0, L]
+      const sg = demo.sigma, L = demo.L;
+      return [normCdf(-x / sg) - normCdf((-L - x) / sg), normCdf((L - x) / sg) - normCdf(-x / sg)];
+    }
+    const demoRange = () => demo.L + 4 * demo.sigma;
+
+    function demoSetX(x) {
+      const R = demoRange();
+      demo.x = Math.max(-R, Math.min(R, x));
+      document.getElementById("plateSlider").value = (demo.x / R).toFixed(3);
+      demoReadout();
+      demoKick();
+    }
+
+    function demoReadout() {
+      const [i1, i2] = demoCurrents(demo.x);
+      const tot = i1 + i2;
+      const S = tot > 1e-9 ? Math.sqrt(Math.max(0, 1 - Math.abs(i1 - i2) / tot)) : 0;
+      const shat = S * tot / demo.iMax;   // the game's centring (noise-free)
+      document.getElementById("plateCentring").textContent = (shat * 100).toFixed(1) + "%";
+      let msg;
+      if (tot < 0.02) msg = "The beam misses the plates: both read only background.";
+      else if (shat >= 0.9) msg = "Equal currents: the beam is centred.";
+      else msg = `More current on plate ${i1 > i2 ? 1 : 2}: the beam leans ${i1 > i2 ? "left" : "right"}.`;
+      document.getElementById("plateStatus").textContent = msg;
+    }
+
+    function demoDraw(now) {
+      const c = document.getElementById("plateCanvas");
+      const W = c.clientWidth, H = 230;
+      if (!W) return;
+      const dpr = window.devicePixelRatio || 1;
+      if (c.width !== Math.round(W * dpr) || c.height !== Math.round(H * dpr)) {
+        c.width = Math.round(W * dpr);
+        c.height = Math.round(H * dpr);
+      }
+      const ctx = c.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      // background noise: a fresh draw per foil every 300 ms (one "shot"); the bars ease towards it
+      if (now - demo.lastNoise > 300) {
+        demo.eps = [Math.random() * demo.nu, Math.random() * demo.nu];
+        demo.lastNoise = now;
+      }
+      const [i1, i2] = demoCurrents(demo.x);
+      const target = [i1 + demo.eps[0], i2 + demo.eps[1]];
+      if (!demo.shown) demo.shown = target.slice();
+      demo.shown = demo.shown.map((v, k) => v + (target[k] - v) * 0.2);
+
+      const m = 18, R = demoRange();
+      const toX = x => m + (x + R) / (2 * R) * (W - 2 * m);
+      const pxPerM = (W - 2 * m) / (2 * R);
+      const yTop = 14, yBot = 112, yMid = (yTop + yBot) / 2;
+
+      [[-demo.L, 0], [0, demo.L]].forEach(([a, b], k) => {   // the two plates (drawn with a hairline gap)
+        const x0 = toX(a) + (k === 1 ? 1.5 : 0), x1 = toX(b) - (k === 0 ? 1.5 : 0);
+        const g = ctx.createLinearGradient(0, yTop, 0, yBot);
+        g.addColorStop(0, "#2c4266");
+        g.addColorStop(0.5, "#22365a");
+        g.addColorStop(1, "#1a2a46");
+        ctx.fillStyle = g;
+        ctx.fillRect(x0, yTop, x1 - x0, yBot - yTop);
+        ctx.strokeStyle = "#5d7699";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x0 + 0.5, yTop + 0.5, x1 - x0 - 1, yBot - yTop - 1);
+        ctx.fillStyle = C.label;
+        ctx.font = '600 11px "Inter", sans-serif';
+        ctx.textAlign = "center";
+        ctx.fillText(`plate ${k + 1}`, (x0 + x1) / 2, yBot + 15);
+      });
+      ctx.save();
+      ctx.setLineDash([3, 4]);
+      ctx.strokeStyle = "rgba(242, 201, 76, 0.55)";
+      ctx.beginPath();
+      ctx.moveTo(toX(0), yTop - 6);
+      ctx.lineTo(toX(0), yBot + 4);
+      ctx.stroke();
+      ctx.restore();
+
+      const bx = toX(demo.x), rad = Math.max(6, 3 * demo.sigma * pxPerM);   // the beam spot, out to 3 sigma
+      const rg = ctx.createRadialGradient(bx, yMid, 0, bx, yMid, rad);
+      rg.addColorStop(0, "rgba(255, 246, 228, 0.95)");
+      rg.addColorStop(0.25, "rgba(255, 194, 138, 0.85)");
+      rg.addColorStop(0.6, "rgba(242, 153, 74, 0.35)");
+      rg.addColorStop(1, "rgba(242, 153, 74, 0)");
+      ctx.fillStyle = rg;
+      ctx.beginPath();
+      ctx.arc(bx, yMid, rad, 0, Math.PI * 2);
+      ctx.fill();
+
+      const barTop = yBot + 26, barH = H - barTop - 16, scale = 1 + 1.2 * demo.nu;
+      demo.shown.forEach((v, k) => {   // each plate's current, including background
+        const cx = toX(k === 0 ? -demo.L / 2 : demo.L / 2);
+        const bw = Math.min(46, (W - 2 * m) / 9);
+        const h = Math.max(1, Math.min(1, v / scale) * barH);
+        ctx.fillStyle = "#1a2a44";
+        ctx.fillRect(cx - bw / 2, barTop, bw, barH);
+        ctx.save();
+        ctx.fillStyle = C.plate;
+        ctx.shadowColor = C.plate;
+        ctx.shadowBlur = 8;
+        ctx.fillRect(cx - bw / 2, barTop + barH - h, bw, h);
+        ctx.restore();
+        ctx.fillStyle = "#e9e1ff";
+        ctx.font = '700 11px "JetBrains Mono", monospace';
+        ctx.textAlign = "left";
+        ctx.fillText(v.toFixed(2), cx + bw / 2 + 6, barTop + barH - 2);
+      });
+    }
+
+    function demoLoop(now) {
+      demo.raf = null;
+      demoDraw(now);
+      if (document.getElementById("aboutSensors").open) demo.raf = requestAnimationFrame(demoLoop);
+    }
+
+    function demoKick() {   // animate only while the section is open
+      if (!demo.raf && document.getElementById("aboutSensors").open) demo.raf = requestAnimationFrame(demoLoop);
+    }
+
+    function initPlateDemo() {
+      const c = document.getElementById("plateCanvas");
+      const fromPointer = e => {
+        const r = c.getBoundingClientRect(), m = 18, R = demoRange();
+        demoSetX(((e.clientX - r.left - m) / (r.width - 2 * m)) * 2 * R - R);
+      };
+      c.addEventListener("pointerdown", e => {
+        demo.dragging = true;
+        try { c.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+        fromPointer(e);
+      });
+      c.addEventListener("pointermove", e => { if (demo.dragging) fromPointer(e); });
+      ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => c.addEventListener(ev, () => { demo.dragging = false; }));
+      document.getElementById("plateSlider").addEventListener("input", e => demoSetX(parseFloat(e.target.value) * demoRange()));
+      document.getElementById("aboutSensors").addEventListener("toggle", demoKick);
+      window.addEventListener("resize", demoKick);
+      demoSetX(1.5 * demo.sigma);   // start a little off-centre
+      fetch("/api/machine_info")    // the simulator's own values for sensor S1 (up-down)
+        .then(r => r.json())
+        .then(info => {
+          const v = info.v;
+          demo.sigma = v.sigma_sem[0];
+          demo.L = v.foil_length[0];
+          demo.iMax = v.i_max[0];
+          demo.nu = info.nu;
+          demoSetX(1.5 * demo.sigma);
+        })
+        .catch(() => { /* keep the defaults (the same numbers) */ });
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* KaTeX for the "For physicists" blocks                                */
+    /* ------------------------------------------------------------------ */
+    function renderPhysicsMath() {
+      if (!window.renderMathInElement) return;
+      document.querySelectorAll(".phys-body").forEach(el => window.renderMathInElement(el, {
+        delimiters: [{ left: "$$", right: "$$", display: true }, { left: "$", right: "$", display: false }],
+        throwOnError: false,
+      }));
+    }
+
+    /* ------------------------------------------------------------------ */
     /* Boot                                                                 */
     /* ------------------------------------------------------------------ */
     window.addEventListener("resize", sizeCanvases);
@@ -1936,6 +2528,9 @@
         }
       } catch (_) { /* storage blocked: stays collapsed */ }
       renderYouCard();
+      initGeminiReader();
+      resetGeminiPanels();
+      initPlateDemo();
       fetch("/api/puzzle_scores")
         .then(r => r.json())
         .then(j => { state.puzzleScores = j; renderScoreCards(); document.getElementById("hintV").textContent = hintText(); })

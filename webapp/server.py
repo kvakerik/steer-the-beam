@@ -368,6 +368,21 @@ def load_gemini_run(seed: int, trial: int = GEMINI_TRIAL) -> Optional[dict[str, 
     return runs[0][1] if runs else None
 
 
+def gemini_sections(blocks: list[str], n_shots: int) -> list[dict[str, Any]]:
+    """Assign each reasoning block of a recorded Gemini run to a shot number.
+
+    The OpenCode log has no shot markers (Gemini fired most shots from its own scripts), so the
+    blocks are spread evenly over the run's shots: block b (0-based) of B belongs to shot
+    ceil((b + 1) * n / B). The client shows the blocks up to the current shot.
+    """
+    n_blocks = len(blocks)
+    n = max(1, n_shots)
+    return [
+        {"shot": max(1, min(n, -(-(b + 1) * n // n_blocks))), "text": text}
+        for b, text in enumerate(blocks)
+    ]
+
+
 def _replay_centring(seed: int, shots: Optional[list[dict[str, Any]]]) -> Optional[float]:
     """Final centring % of replaying `shots` on BeamlineEnv(seed), exactly as the Watch tab does.
 
@@ -669,8 +684,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         {"theta_h": s.get("theta_h", [0.0] * 10), "theta_v": s.get("theta_v", [0.0] * 12)}
                         for s in run_data.get("shots", [])
                     ])
-                    final_text = run_data.get("agent_text", "")
-                    text_blocks = [b.strip() for b in final_text.split("\n\n\n\n") if b.strip()]
+                    text_blocks = [b.strip() for b in run_data.get("agent_text", "").split("\n\n\n\n") if b.strip()]
 
                 init_p = format_state_payload(
                     env=env,
@@ -682,13 +696,16 @@ async def websocket_endpoint(websocket: WebSocket):
                     obs_h=[{"ratio": o.ratio, "level": o.level} for o in env._sim.initial_result.obs_h],
                     obs_v=[{"ratio": o.ratio, "level": o.level} for o in env._sim.initial_result.obs_v],
                     done=False,
-                    agent_text=text_blocks[0] if text_blocks else "",
                 )
+                if not is_bayes:
+                    # The whole transcript is sent once, as per-shot sections; the client reveals them
+                    # as the replay advances (no growing transcript in every shot's message).
+                    init_p["agent_sections"] = gemini_sections(text_blocks, len(feed))
                 await session.send_state(init_p)
 
                 th = threading.Thread(
                     target=run_playback,
-                    args=(session, env, session.mode, feed, cancel, text_blocks or None, final_text),
+                    args=(session, env, session.mode, feed, cancel, None, ""),
                     daemon=True,
                 )
                 session.active_thread = th
