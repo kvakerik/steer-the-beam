@@ -41,7 +41,7 @@
     header {
       background: var(--card-bg);
       border-bottom: 1px solid var(--border);
-      padding: 16px 28px;
+      padding: 12px 28px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -75,7 +75,7 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
-      padding: 14px 28px 0 28px;
+      padding: 12px 28px 0 28px;
     }
     @media (max-width: 800px) {
       .dashboard-cards { grid-template-columns: 1fr; }
@@ -92,8 +92,17 @@
     }
     .db-card.active-db { border-color: var(--accent); background: rgba(242, 153, 74, 0.06); }
     .db-card-left { display: flex; flex-direction: column; gap: 3px; }
-    .db-card-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .db-card-title { font-size: 14px; font-weight: 700; color: var(--text); }
     .db-card-sub { font-size: 11px; color: var(--text-muted); }
+    /* You card: text | numbers, with the AI-view hint across the bottom */
+    #cardYou { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px; row-gap: 6px; }
+    .you-hint {
+      grid-column: 1 / -1; text-align: left; background: none; border: none; padding: 0; cursor: pointer;
+      font-family: inherit; font-size: 11px; line-height: 1.35; color: var(--plate);
+    }
+    .you-hint:hover { text-decoration: underline; }
+    .you-true { font-size: 11px; }
+    .about-h { font-family: 'Space Grotesk', sans-serif; font-size: 13px; color: var(--text); margin-top: 16px; }
     .db-card-val { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--gold); }
     .db-card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
     .db-card-avg { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; }
@@ -105,14 +114,14 @@
       border-radius: 8px; padding: 9px 14px; font-size: 13px; line-height: 1.45; color: var(--text);
     }
     .info-line .wiggle { color: var(--gold); }
-    .info-wrap { padding: 14px 28px 0 28px; }
+    .info-wrap { padding: 12px 28px 0 28px; }
 
     /* 3 Big Tabs */
     .tabs-bar {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 16px 28px 0 28px;
+      padding: 12px 28px 0 28px;
       flex-wrap: wrap;
     }
     .tab-btn {
@@ -144,7 +153,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 10px 28px;
-      margin-top: 14px;
+      margin-top: 12px;
       background: var(--card-bg);
       border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
@@ -378,10 +387,14 @@
   <div class="dashboard-cards">
     <div class="db-card active-db" id="cardYou">
       <div class="db-card-left">
-        <span class="db-card-title">🧑 You: best on this puzzle</span>
+        <span class="db-card-title">🧑 You, AI view: fair comparison</span>
         <span class="db-card-sub">practice: up–down plane only (the agents steer both planes)</span>
       </div>
-      <span class="db-card-val" id="valYouBest">—</span>
+      <div class="db-card-right">
+        <span class="db-card-val" id="valYouAi">—</span>
+        <span class="db-card-avg you-true" id="valYouTrue">with true beam: —</span>
+      </div>
+      <button class="you-hint" id="youHint" onclick="youHintClick()">Too easy? Switch on AI view: you’ll see only the noisy sensors, like the AI.</button>
     </div>
     <div class="db-card" id="cardBayes">
       <div class="db-card-left">
@@ -506,12 +519,12 @@
       <div class="canvas-title">
         <span>Gemini Reasoning Transcript</span>
       </div>
-      <div class="gemini-note">Gemini’s numbers use the machine’s sign convention (opposite to the arrows). Its θ_v[0–11] are M1–M12 and θ_h[0–9] are M13–M22.</div>
+      <div class="gemini-note">Gemini’s numbers use the machine’s sign convention: a positive number pushes the opposite way to our arrows.</div>
       <div id="geminiBox" class="gemini-reasoning-box">Gemini thoughts and actions will stream here during replay...</div>
     </div>
 
     <!-- Background and technical details (collapsible, plain text) -->
-    <details class="about-box">
+    <details class="about-box" id="aboutWhat">
       <summary>What is this?</summary>
       <div class="about-content">
         <p>At CERN, a proton beam flies almost a kilometre through a vacuum tube, from one accelerator to the experiments. 22 small “corrector” magnets keep it on track: 12 push it up or down, 10 push it left or right. After every maintenance break their settings are slightly off, and the beam crashes into the wall. Operators then spend hours re-steering it by hand, mostly blind, because once the beam is lost, every sensor after that point goes dark.</p>
@@ -529,8 +542,13 @@
         <p><strong>Sensor rings:</strong> the white dot shows how far the beam passes from the centre, measured in beam widths. Inside the small circle = centred (green); inside the ring = off-centre (yellow); outside = far off.</p>
         <p><strong>Centring %:</strong> the average centring over all 21 sensors.</p>
         <p><strong>Benchmark score:</strong> in the official evaluation each run also gets a score from 0 to 1 (Algorithm 0.50, Gemini 0.26). It’s computed from the same centring; see the README.</p>
-        <p><strong>The algorithm:</strong> a Bayesian particle filter (100,000 guesses about the hidden errors, updated after every shot). The website replays its recorded runs, which is why pause and speed work.</p>
-        <p><strong>Play mode:</strong> you steer the 12 up–down magnets; the left–right ones are already set for you.</p>
+        <p><strong>Recorded runs:</strong> the website replays recorded runs of both players (one per puzzle for the algorithm, two per puzzle for Gemini), which is why pause and speed work. “This puzzle” on the Gemini card is the mean of its runs on that puzzle.</p>
+        <p><strong>Play mode:</strong> you steer the 12 up–down magnets; the left–right ones are already set for you. For a fair comparison, switch on AI view: you start from zero magnets, see only the noisy sensors, and your result is shown when you switch AI view off.</p>
+
+        <h4 class="about-h">Who plays</h4>
+        <p><strong>The algorithm:</strong> a Bayesian particle filter. It keeps 100,000 guesses about the hidden magnet errors and updates them after every shot. It uses exactly the same information and controls as the AI.</p>
+        <p><strong>The AI:</strong> Gemini 3.8 Flash, run as an autonomous agent in a general-purpose coding harness (OpenCode via Harbor). It has a shell, can write and run its own code, and has the four beamline tools. On the “Watch Gemini” tab you can read its full reasoning in the reasoning panel, step by step.</p>
+        <p><strong>Room to improve, on both sides:</strong> Gemini might do better with a task-specific harness, e.g. tools built just for steering the beam instead of a general coding setup (though then the tool does part of the reasoning). And the algorithm isn’t the ceiling either: it reaches about 67%, not the 95% goal, and more advanced methods, such as a trained reinforcement-learning policy, could steer better.</p>
       </div>
     </details>
   </div>
@@ -549,7 +567,11 @@
       score: { centring_v: 0, centring_all: 0, sf: 0, reward: 0, is_lost: false, loss_s: null, solved: false },
       god_view: { x_sem_h: [], x_sem_v: [], is_lost: false, loss_s: null, first_lost_sem_h: null, first_lost_sem_v: null },
       machine_info: null,
-      bestCentring: 0.0,
+      bestTrue: null,        // You card: best centring on this puzzle with the true beam visible
+      bestAi: null,          // You card: best result of a blind (AI view) attempt on this puzzle
+      lastBlind: null,       // result of the last blind attempt
+      blindActive: false,    // a blind attempt is running (AI view on, started from zero magnets)
+      geminiRun: 0,          // which recorded Gemini run of this puzzle the Watch tab replays
       speed: 3.0,
       agent_text: "",
       aiView: false,         // Play tab: show only what the AI sees
@@ -685,9 +707,9 @@
       // One metric everywhere: true mean centring over all 21 sensors (S_f), in %
       const centringVal = (data.score.sf || 0) * 100;
 
-      if (state.tab === "play" && centringVal > state.bestCentring) {
-        state.bestCentring = centringVal;
-        document.getElementById("valYouBest").textContent = state.bestCentring.toFixed(1) + "%";
+      if (state.tab === "play" && !state.aiView && (state.bestTrue === null || centringVal > state.bestTrue)) {
+        state.bestTrue = centringVal;   // AI-view attempts are scored only when they end (see endBlindAttempt)
+        renderYouCard();
       }
 
       if (data.agent_text && state.tab === "gemini") {
@@ -869,8 +891,14 @@
 
     function newPuzzle() {   // cycle 0 → 1 → 2 → 3 → 4 → 0; Play and both Watch tabs share it
       state.seed = (state.seed + 1) % 5;
-      state.bestCentring = 0;   // "your best on this puzzle" starts again
-      document.getElementById("valYouBest").textContent = "—";
+      // both "best on this puzzle" values start again; a running blind attempt is dropped and,
+      // if AI view stays on in Play, a new one starts with the new puzzle's zero magnets
+      state.bestTrue = null;
+      state.bestAi = null;
+      state.lastBlind = null;
+      state.blindActive = state.tab === "play" && state.aiView;
+      state.geminiRun = 0;
+      renderYouCard();
       state.run = "idle";
       updatePlayButton();
       sendInit();
@@ -884,15 +912,75 @@
       const rec = (ps.puzzles && ps.puzzles[state.seed]) || {};
       const avg = ps.average || {};
       const pct = v => (v === null || v === undefined) ? "—" : v.toFixed(1) + "%";
+      const gr = geminiRunInfo();
       [["bayes", "Bayes"], ["gemini", "Gemini"]].forEach(([mode, name]) => {
         // big yellow number = this puzzle: live during a Watch run (same number as the CENTRING badge)
         const live = state.tab === mode && state.run !== "idle";
         const value = live ? ((state.score && state.score.sf) || 0) * 100 : rec[mode];
         document.getElementById(`val${name}Puzzle`).textContent = pct(value);
-        document.getElementById(`sub${name}`).textContent = !live ? "centring on this puzzle"
-          : (state.run === "done" ? "centring on this puzzle · final" : `centring on this puzzle · live, shot ${state.shot}`);
+        let sub;
+        if (mode === "gemini" && gr.n > 1) {
+          const run = `run ${gr.idx + 1} of ${gr.n}`;
+          sub = !live ? `centring on this puzzle · mean of ${gr.n} runs`
+            : (state.run === "done" ? `${run} · final` : `${run} · live, shot ${state.shot}`);
+        } else {
+          sub = !live ? "centring on this puzzle"
+            : (state.run === "done" ? "centring on this puzzle · final" : `centring on this puzzle · live, shot ${state.shot}`);
+        }
+        document.getElementById(`sub${name}`).textContent = sub;
         document.getElementById(`val${name}Avg`).textContent = `average over 5 puzzles: ${pct(avg[mode])}`;
       });
+    }
+
+    // Recorded Gemini runs of the current puzzle; the Watch tab replays them in turn
+    function geminiRunInfo() {
+      const p = ((state.puzzleScores || {}).puzzles || {})[state.seed] || {};
+      const runs = p.gemini_runs || [];
+      const n = runs.length;
+      const idx = n ? state.geminiRun % n : 0;
+      return { n, idx, trial: n ? runs[idx].trial : undefined };
+    }
+
+    // You card: the main value is the best blind (AI view) result, the small line the best with the true beam
+    function renderYouCard() {
+      const pct = v => (v === null || v === undefined) ? "—" : v.toFixed(1) + "%";
+      document.getElementById("valYouAi").textContent = pct(state.bestAi);
+      document.getElementById("valYouTrue").textContent = `with true beam: ${pct(state.bestTrue)}`;
+      const hint = document.getElementById("youHint");
+      if (state.blindActive) {
+        hint.textContent = "Blind attempt running: switch AI view off to see your result.";
+      } else if (state.lastBlind !== null) {
+        hint.textContent = `Your last blind attempt: ${pct(state.lastBlind)}. Switch on AI view to try again.`;
+      } else {
+        hint.textContent = "Too easy? Switch on AI view: you’ll see only the noisy sensors, like the AI.";
+      }
+    }
+
+    // A blind attempt starts from zero magnets when AI view is switched on; its result is the true
+    // centring at the moment AI view is switched off (like the agents, scored on the final state)
+    function startBlindAttempt() {
+      state.blindActive = true;
+      zeroMagnets();
+      renderYouCard();
+    }
+
+    function endBlindAttempt() {
+      if (!state.blindActive) return;
+      state.blindActive = false;
+      const c = ((state.score && state.score.sf) || 0) * 100;
+      state.lastBlind = c;
+      state.bestAi = state.bestAi === null ? c : Math.max(state.bestAi, c);
+      renderYouCard();
+    }
+
+    function youHintClick() {
+      if (state.tab !== "play") {
+        switchTab("play");                  // with AI view already on this starts a blind attempt
+        if (!state.aiView) toggleAiView();
+      } else {
+        toggleAiView();                     // on: start a blind attempt; off: end it and show the result
+      }
+      document.getElementById("cardCanvasV").scrollIntoView({ behavior: "smooth" });
     }
 
     function updateInfoLine() {
@@ -945,13 +1033,19 @@
       }
       if (state.run === "playing") return "Running… press Pause any time";
       if (state.run === "paused") return "Paused: press Resume to continue";
-      if (state.run === "done") return "Finished. Press Play again to watch it once more.";
+      const gr = geminiRunInfo();
+      const nextRun = gr.n > 1 ? ` (run ${(gr.idx + 1) % gr.n + 1} of ${gr.n})` : "";
+      if (state.run === "done") {
+        return t === "gemini" ? `Finished. Press Play again to watch the next recorded run${nextRun}.`
+                              : "Finished. Press Play again to watch it once more.";
+      }
       return t === "bayes" ? "Press Play to watch the algorithm's shots. Pause any time."
-                           : "Press Play: replay of a recorded Gemini run. Pause any time.";
+                           : `Press Play: replay of recorded Gemini run ${gr.idx + 1} of ${gr.n || 1}. Pause any time.`;
     }
 
     function toggleAiView() {
       state.aiView = !state.aiView;
+      if (state.aiView) startBlindAttempt(); else endBlindAttempt();
       views.v.tip.style.display = "none";
       applyTexts();
       requestFrame();
@@ -963,7 +1057,12 @@
 
     function switchTab(t) {
       if (state.tab === t) return;
+      if (state.tab === "play") endBlindAttempt();   // leaving Play ends a blind attempt (Watch shows the true beam)
       state.tab = t;
+      if (t === "play" && state.aiView) {               // back in Play with AI view on: new attempt, magnets reset by init
+        state.blindActive = true;
+        renderYouCard();
+      }
       state.run = "idle";
       state.sliderActive = false;
       state.pendingLaunch = false;
@@ -1004,8 +1103,14 @@
         state.run = "playing";
         sendWS({ type: "resume", speed: state.speed });
       } else {
+        if (state.tab === "gemini" && state.run === "done") state.geminiRun += 1;   // Play again = next recorded run
         state.run = "playing";
-        sendWS({ type: state.tab === "bayes" ? "start_bayes" : "start_gemini", seed: state.seed, speed: state.speed });
+        const msg = { type: state.tab === "bayes" ? "start_bayes" : "start_gemini", seed: state.seed, speed: state.speed };
+        if (state.tab === "gemini") {
+          const gr = geminiRunInfo();
+          if (gr.trial !== undefined) msg.trial = gr.trial;
+        }
+        sendWS(msg);
       }
       updatePlayButton();
     }
@@ -1082,7 +1187,7 @@
 
     function sizeCanvases() {
       const play = state.tab === "play";
-      sizeCanvas(views.v, play ? 340 : 240);
+      sizeCanvas(views.v, play ? 320 : 240);
       if (!play) sizeCanvas(views.h, 240);
       requestFrame();
     }
@@ -1802,9 +1907,17 @@
       const setBarH = () => document.documentElement.style.setProperty("--bar-h", bar.offsetHeight + "px");
       setBarH();
       if (window.ResizeObserver) new ResizeObserver(setBarH).observe(bar);
+      // "What is this?" is open on the first visit only
+      try {
+        if (!localStorage.getItem("stb.aboutSeen")) {
+          document.getElementById("aboutWhat").open = true;
+          localStorage.setItem("stb.aboutSeen", "1");
+        }
+      } catch (_) { /* storage blocked: stays collapsed */ }
+      renderYouCard();
       fetch("/api/puzzle_scores")
         .then(r => r.json())
-        .then(j => { state.puzzleScores = j; renderScoreCards(); })
+        .then(j => { state.puzzleScores = j; renderScoreCards(); document.getElementById("hintV").textContent = hintText(); })
         .catch(() => { /* cards keep "—" */ });
     });
   </script>

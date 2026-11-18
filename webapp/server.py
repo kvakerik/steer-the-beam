@@ -330,23 +330,30 @@ def compute_bayes_run(seed: int, feed: ShotFeed, cancel: threading.Event) -> Opt
     return env
 
 
-GEMINI_TRIAL = 2   # recorded Gemini run shown per puzzle (trial 1 files are empty)
+GEMINI_TRIAL = 2   # default recorded Gemini run (the trial-1 files are empty)
 
 
-def load_gemini_run(seed: int, trial: int = GEMINI_TRIAL) -> Optional[dict[str, Any]]:
-    """Recorded OpenCode + Gemini run for `seed`: the requested trial, else the first one with shots."""
-    candidates = [RUNS_DIR / f"beam-steering-s{seed:03d}_{trial}.json"]
-    candidates += sorted(RUNS_DIR.glob(f"beam-steering-s{seed:03d}_*.json"))
-    for f in candidates:
-        if not f.exists():
-            continue
+def gemini_runs(seed: int) -> list[tuple[int, dict[str, Any]]]:
+    """All valid recorded OpenCode + Gemini runs for `seed` as (trial, data), sorted by trial."""
+    runs: list[tuple[int, dict[str, Any]]] = []
+    for f in RUNS_DIR.glob(f"beam-steering-s{seed:03d}_*.json"):
         try:
+            trial = int(f.stem.split("_")[-1])
             data = json.loads(f.read_text(encoding="utf-8"))
         except Exception:
             continue
         if data.get("shots"):
+            runs.append((trial, data))
+    return sorted(runs, key=lambda r: r[0])
+
+
+def load_gemini_run(seed: int, trial: int = GEMINI_TRIAL) -> Optional[dict[str, Any]]:
+    """Recorded Gemini run for `seed`: the requested trial if valid, else the first valid one."""
+    runs = gemini_runs(seed)
+    for t, data in runs:
+        if t == trial:
             return data
-    return None
+    return runs[0][1] if runs else None
 
 
 def _replay_centring(seed: int, shots: Optional[list[dict[str, Any]]]) -> Optional[float]:
@@ -369,17 +376,24 @@ _puzzle_scores: Optional[dict[str, Any]] = None
 
 @app.get("/api/puzzle_scores")
 async def get_puzzle_scores():
-    """Final centring % of the recorded algorithm and Gemini runs per website puzzle (seeds 0-4)."""
+    """Final centring % of the recorded runs per website puzzle (seeds 0-4).
+
+    Algorithm: one recorded run per puzzle. Gemini: every valid recorded run; "gemini" is the mean
+    of that puzzle's runs, and "gemini_runs" lists each run (the Watch tab replays them in turn).
+    The averages are over the 5 puzzles.
+    """
     global _puzzle_scores
     if _puzzle_scores is None:
-        puzzles: dict[int, dict[str, Optional[float]]] = {}
+        puzzles: dict[int, dict[str, Any]] = {}
         for seed in range(5):
             with _bayes_cache_lock:
                 bayes_shots = _bayes_cache.get(seed)
-            gem = load_gemini_run(seed)
+            runs = [{"trial": t, "centring": _replay_centring(seed, d["shots"])} for t, d in gemini_runs(seed)]
+            vals = [r["centring"] for r in runs if r["centring"] is not None]
             puzzles[seed] = {
                 "bayes": _replay_centring(seed, bayes_shots),
-                "gemini": _replay_centring(seed, gem.get("shots") if gem else None),
+                "gemini": sum(vals) / len(vals) if vals else None,
+                "gemini_runs": runs,
             }
         average: dict[str, Optional[float]] = {}
         for agent in ("bayes", "gemini"):

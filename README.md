@@ -15,10 +15,12 @@ Try the live interactive demo, deployed publicly on Modal:
 - 👉 **v2 (redesigned for non-physicists):** [https://kvakerik--steer-the-beam-v2-fastapi-app.us-east.modal.run](https://kvakerik--steer-the-beam-v2-fastapi-app.us-east.modal.run)
 - **v1 (version submitted at Junction 2026):** [https://kvakerik--tt20-beam-steering-webapp-fastapi-app.us-east.modal.run](https://kvakerik--tt20-beam-steering-webapp-fastapi-app.us-east.modal.run)
 
-- **Play:** drag the 12 up–down magnets on the plot (or use the sliders) to thread the proton beam through the centre of every sensor. The **AI view** toggle hides the beam and shows only the noisy sensor readings the agent gets.
+- **Play:** drag the 12 up–down magnets on the plot (or use the sliders) to thread the proton beam through the centre of every sensor. The **AI view** toggle hides the beam and shows only the noisy sensor readings the agent gets; a blind attempt in AI view is the fair comparison with the agents.
 - **Watch the algorithm:** replay of recorded honest Bayes runs (seeds 0–4): the reference `BayesAgent` (100,000 particles, roughening 0.2, independent agent seed), recorded with `python -m webapp.record_bayes` and replayed through the same `BeamlineEnv(seed)`, which reproduces each run exactly.
-- **Watch Gemini:** replay of recorded OpenCode + Gemini 3.8 Flash benchmark episodes with the reasoning transcript.
+- **Watch Gemini:** replay of the recorded OpenCode + Gemini 3.8 Flash benchmark episodes (two valid runs per puzzle, replayed in turn) with the reasoning transcript.
 - Both Watch tabs have 1×/3×/10× speed and Pause/Resume. The plots show the true beam (god view), which the agents never see.
+
+The website shows **centring %**, the true mean centring over all 21 sensors: **Algorithm 67.4 %, Gemini 29.4 %** (averages over the 5 website puzzles, using every valid recorded run). It is shown alongside the official benchmark score from 0 to 1 used in the evaluation below (**0.50 vs 0.26**), which is computed from the same centring.
 
 Run locally:
 ```bash
