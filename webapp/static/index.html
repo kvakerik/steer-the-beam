@@ -95,6 +95,17 @@
     .db-card-title { font-size: 15px; font-weight: 700; color: var(--text); }
     .db-card-sub { font-size: 11px; color: var(--text-muted); }
     .db-card-val { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--gold); }
+    .db-card-val.avg { color: var(--text); }
+    .db-card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .db-card-puzzle { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: var(--gold); white-space: nowrap; }
+
+    /* One-line explanation above the plots */
+    .info-line {
+      display: flex; flex-direction: column; gap: 4px;
+      background: rgba(92, 200, 230, 0.06); border: 1px solid var(--border); border-left: 3px solid var(--cyan);
+      border-radius: 8px; padding: 9px 14px; font-size: 13px; line-height: 1.45; color: var(--text);
+    }
+    .info-line .wiggle { color: var(--gold); }
 
     /* 3 Big Tabs */
     .tabs-bar {
@@ -254,6 +265,7 @@
     }
     .slider-name { font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; color: #fff; }
     .slider-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); text-align: right; }
+    .slider-group-title { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-top: 12px; }
     .slider-ends { display: flex; justify-content: space-between; font-size: 10px; color: #5f7596; }
     input[type=range] {
       width: 100%; height: 5px; background: #243b61; border-radius: 3px; outline: none; cursor: pointer; accent-color: var(--accent);
@@ -321,23 +333,29 @@
     <div class="db-card active-db" id="cardYou">
       <div class="db-card-left">
         <span class="db-card-title">🧑 You: best centring</span>
-        <span class="db-card-sub">your best in Play mode</span>
+        <span class="db-card-sub">practice: one plane, centring %</span>
       </div>
       <span class="db-card-val" id="valYouBest">—</span>
     </div>
     <div class="db-card" id="cardBayes">
       <div class="db-card-left">
-        <span class="db-card-title">🧠 Algorithm: 0.50 avg</span>
-        <span class="db-card-sub">average over our evaluation</span>
+        <span class="db-card-title">🧠 Algorithm</span>
+        <span class="db-card-sub">average score over our evaluation (0–1)</span>
       </div>
-      <span class="db-card-val">0.50</span>
+      <div class="db-card-right">
+        <span class="db-card-val avg">0.50</span>
+        <span class="db-card-puzzle" id="valBayesPuzzle">this puzzle: —</span>
+      </div>
     </div>
     <div class="db-card" id="cardGemini">
       <div class="db-card-left">
-        <span class="db-card-title">🤖 Gemini AI: 0.26 avg</span>
-        <span class="db-card-sub">average over our evaluation</span>
+        <span class="db-card-title">🤖 Gemini AI</span>
+        <span class="db-card-sub">average score over our evaluation (0–1)</span>
       </div>
-      <span class="db-card-val">0.26</span>
+      <div class="db-card-right">
+        <span class="db-card-val avg">0.26</span>
+        <span class="db-card-puzzle" id="valGeminiPuzzle">this puzzle: —</span>
+      </div>
     </div>
   </div>
 
@@ -351,6 +369,10 @@
   <!-- Sub-bar Controls -->
   <div class="sub-bar">
     <div class="kpi-row">
+      <div class="kpi-badge" id="kpiPuzzle">
+        <span class="label">Puzzle</span>
+        <span id="lblPuzzle">1 of 5</span>
+      </div>
       <div class="kpi-badge" id="kpiCentring">
         <span class="label">Centring</span>
         <span id="lblLiveCentring" style="color:var(--gold);">0.0%</span>
@@ -373,18 +395,23 @@
         <button class="btn-action" id="spd10" style="padding:4px 9px; font-size:12px;" onclick="setSpeed(10.0)">10×</button>
       </div>
       <button id="btnPlayPause" class="btn-action btn-accent" style="display:none;" onclick="togglePlayPause()">▶ Play</button>
-      <button class="btn-action" onclick="newPuzzle()">🔀 New puzzle</button>
+      <button class="btn-action" onclick="newPuzzle()">🔀 Next puzzle</button>
       <button id="btnZero" class="btn-action" onclick="zeroMagnets()">↺ Zero magnets</button>
     </div>
   </div>
 
   <div class="content-area">
+    <div class="info-line" id="infoLine">
+      <span id="infoMain">Practice mode: you steer the 12 up–down magnets; the 10 left–right ones are already set for you. The AI has to handle all 22 at once.</span>
+      <span class="wiggle" id="infoWiggle" style="display:none;">Even with all magnets at 0 the beam wiggles: each magnet has a hidden error the agent must cancel.</span>
+    </div>
+
     <!-- Side view (vertical plane): Play and Watch -->
     <div class="canvas-card" id="cardCanvasV">
       <div class="canvas-header">
         <div class="canvas-title">
           <span style="color:var(--accent);">&#9654;</span>
-          <span id="titleV">Side view: the beam flies left → right through the tube</span>
+          <span id="titleV">Side view: 12 up–down magnets (M1–M12) · the beam flies left → right</span>
         </div>
         <div class="canvas-header-right">
           <span class="canvas-hint" id="hintV"></span>
@@ -419,7 +446,7 @@
       <div class="canvas-header">
         <div class="canvas-title">
           <span style="color:var(--cyan);">&#9654;</span>
-          <span>Top view: the same beam seen from above (left–right)</span>
+          <span id="titleH">Top view: 10 left–right magnets (M13–M22)</span>
         </div>
       </div>
       <canvas id="canvasH"></canvas>
@@ -432,7 +459,12 @@
         <span style="font-size:13px; font-weight:700;" id="slidersTitle">Magnet strengths (or drag the magnets on the plot)</span>
         <span style="font-size:11px; color:var(--text-muted);" id="slidersHint">+ pushes the beam up, − pushes it down</span>
       </div>
-      <div id="slidersGrid" class="sliders-grid-12"></div>
+      <div class="slider-group-title">Up–down magnets (M1–M12)</div>
+      <div id="slidersGridV" class="sliders-grid-12"></div>
+      <div id="groupH" style="display:none;">
+        <div class="slider-group-title">Left–right magnets (M13–M22)</div>
+        <div id="slidersGridH" class="sliders-grid-12"></div>
+      </div>
     </div>
 
     <!-- Gemini Reasoning Card -->
@@ -440,7 +472,7 @@
       <div class="canvas-title">
         <span>Gemini Reasoning Transcript</span>
       </div>
-      <div class="gemini-note">Gemini’s numbers use the machine’s sign convention (opposite to the arrows).</div>
+      <div class="gemini-note">Gemini’s numbers use the machine’s sign convention (opposite to the arrows). Its θ_v[0–11] are M1–M12 and θ_h[0–9] are M13–M22.</div>
       <div id="geminiBox" class="gemini-reasoning-box">Gemini thoughts and actions will stream here during replay...</div>
     </div>
 
@@ -453,6 +485,7 @@
       <div id="physicistContent" class="physicist-content" style="display:none;">
         <p><strong>CERN TT20 Transfer Line:</strong> 400 GeV/c slow-extracted proton beam from SPS to North Area target over 900 meters. Uncoupled linear optics with 10 horizontal / 12 vertical corrector dipoles and 11 horizontal / 10 vertical split-foil secondary emission monitors (SEMs). Uniform background noise &nu; = 0.25, Table 1 medium optics randomization. The Bayesian benchmark uses a 100k-particle filter (Adam Štafa CERN report, 2026).</p>
         <p><strong>Plot:</strong> the tube is the aperture profile a(s) at 5 m checkpoints; the beam is the true trajectory x(s) = R(Δθ − gθ) on the perturbed machine (god view, never shown to the agent). Magnet arrows show the commanded push −θ (the hidden offset Δθ is not drawn); slider values use the same sign, so they are the negative of the machine's θ that Gemini reasons about. The Centring % badge is the mean true normalised symmetry Ŝ. The white dot inside each ring is the true offset x/σ at that monitor (nominal σ), with the ring edge at 0.5σ and the faint inner circle at 0.25σ; the ring is green when |x| &lt; 0.25σ (≈ Ŝ 0.90 for these foils, about 11σ long), so dot and colour come from the same number. A hollow dot means the offset is beyond the ring edge. The plate bars are the noisy foil readings I₁ = r·ℓ (lower/right foil) and I₂ = (1−r)·ℓ (upper/left foil) — exactly what the agent receives in AI view.</p>
+        <p><strong>Magnet numbers:</strong> M1–M12 are the 12 vertical correctors (θ_v[0–11]), M13–M22 the 10 horizontal ones (θ_h[0–9]). In Play only the vertical plane is yours; the horizontal correctors are pre-set to a good solution for that puzzle.</p>
         <p><strong>Watch the algorithm</strong> replays a precomputed run of the honest reference (BayesAgent, 100k particles, roughening 0.2, agent seed = env seed + 1 000 003, budget 60). Replaying its corrector settings through the same BeamlineEnv(seed) reproduces the run exactly; precomputing lets speed and pause work.</p>
       </div>
     </div>
@@ -476,6 +509,7 @@
       speed: 3.0,
       agent_text: "",
       aiView: false,         // Play tab: show only what the AI sees
+      puzzleScores: null,    // final 0-1 score of the recorded runs per puzzle, from /api/puzzle_scores
       sliderActive: false,   // the user is changing a magnet (slider or drag)
       pendingLaunch: false,  // fly the particle once the server confirms the released value
     };
@@ -673,6 +707,8 @@
       const labels = { idle: "▶ Play", playing: "⏸ Pause", paused: "▶ Resume", done: "↻ Play again" };
       b.textContent = labels[state.run] || "▶ Play";
       b.className = state.run === "playing" ? "btn-action" : "btn-action btn-accent";
+      renderScoreCards();
+      updateInfoLine();
     }
 
     /* ------------------------------------------------------------------ */
@@ -682,43 +718,58 @@
       return (state.machine_info && state.machine_info.theta_max) || 0.00045;
     }
 
-    function fmtPush(mrad) {
-      const arrow = mrad > 0.004 ? " ↑" : (mrad < -0.004 ? " ↓" : "");
-      return (mrad >= 0 ? "+" : "−") + Math.abs(mrad).toFixed(2) + " mrad" + arrow;
+    // Every magnet has a unique name: up–down (vertical) M1–M12, left–right (horizontal) M13–M22
+    const PLANES = { v: { n: 12, grid: "slidersGridV" }, h: { n: 10, grid: "slidersGridH" } };
+    function magName(p, j) {
+      return "M" + (p === "h" ? j + 13 : j + 1);
+    }
+
+    function fmtPush(mrad, p) {
+      const pos = p === "h" ? " left" : " ↑", neg = p === "h" ? " right" : " ↓";
+      const dir = mrad > 0.004 ? pos : (mrad < -0.004 ? neg : "");
+      return (mrad >= 0 ? "+" : "−") + Math.abs(mrad).toFixed(2) + " mrad" + dir;
     }
 
     function syncSliders() {
-      for (let i = 0; i < 12; i++) {
-        const push = -(state.theta_v[i] || 0) * 1000;
-        const slider = document.getElementById(`sl_v_${i}`);
-        const text = document.getElementById(`val_v_${i}`);
-        if (!slider || !text) continue;
-        if (!(state.tab === "play" && state.sliderActive)) slider.value = push.toFixed(3);
-        text.textContent = fmtPush(push);
-        slider.disabled = (state.tab !== "play");
-      }
+      ["v", "h"].forEach(p => {
+        const theta = (p === "h" ? state.theta_h : state.theta_v) || [];
+        for (let i = 0; i < PLANES[p].n; i++) {
+          const push = -(theta[i] || 0) * 1000;
+          const slider = document.getElementById(`sl_${p}_${i}`);
+          const text = document.getElementById(`val_${p}_${i}`);
+          if (!slider || !text) continue;
+          if (!(p === "v" && state.tab === "play" && state.sliderActive)) slider.value = push.toFixed(3);
+          text.textContent = fmtPush(push, p);
+          slider.disabled = !(state.tab === "play" && p === "v");
+        }
+      });
     }
 
     function initSliders() {
-      const grid = document.getElementById("slidersGrid");
-      grid.innerHTML = "";
-      for (let i = 0; i < 12; i++) {
-        const row = document.createElement("div");
-        row.className = "slider-row";
-        row.innerHTML = `
-          <div class="slider-top">
-            <span class="slider-name">Magnet M${i + 1}</span>
-            <span class="slider-val" id="val_v_${i}">+0.00 mrad</span>
-          </div>
-          <input type="range" id="sl_v_${i}" min="-0.45" max="0.45" step="0.005" value="0"
-                 aria-label="Magnet M${i + 1} strength (push up/down)"
-                 oninput="onSliderMove(${i}, this.value)" onchange="onSliderRelease(${i})">
-          <div class="slider-ends"><span>↓ push down</span><span>push up ↑</span></div>
-        `;
-        row.addEventListener("mouseenter", () => { hoverMagnet = { p: "v", j: i }; requestFrame(); });
-        row.addEventListener("mouseleave", () => { hoverMagnet = null; requestFrame(); });
-        grid.appendChild(row);
-      }
+      ["v", "h"].forEach(p => {
+        const grid = document.getElementById(PLANES[p].grid);
+        grid.innerHTML = "";
+        for (let i = 0; i < PLANES[p].n; i++) {
+          const name = magName(p, i);
+          const row = document.createElement("div");
+          row.className = "slider-row";
+          // left–right sliders run right-to-left so the knob sits on the side the beam is pushed to
+          const ends = p === "h" ? "<span>push left</span><span>push right</span>" : "<span>↓ push down</span><span>push up ↑</span>";
+          const handlers = p === "v" ? `oninput="onSliderMove(${i}, this.value)" onchange="onSliderRelease(${i})"` : "disabled";
+          row.innerHTML = `
+            <div class="slider-top">
+              <span class="slider-name">Magnet ${name}</span>
+              <span class="slider-val" id="val_${p}_${i}">+0.00 mrad</span>
+            </div>
+            <input type="range" id="sl_${p}_${i}" min="-0.45" max="0.45" step="0.005" value="0"
+                   ${p === "h" ? 'style="direction: rtl;"' : ""} aria-label="Magnet ${name} strength" ${handlers}>
+            <div class="slider-ends">${ends}</div>
+          `;
+          row.addEventListener("mouseenter", () => { hoverMagnet = { p, j: i }; requestFrame(); });
+          row.addEventListener("mouseleave", () => { hoverMagnet = null; requestFrame(); });
+          grid.appendChild(row);
+        }
+      });
     }
 
     let fireTimer = null;
@@ -746,7 +797,7 @@
       const sl = document.getElementById(`sl_v_${j}`);
       if (sl) sl.value = push.toFixed(3);
       const tx = document.getElementById(`val_v_${j}`);
-      if (tx) tx.textContent = fmtPush(push);
+      if (tx) tx.textContent = fmtPush(push, "v");
       pulseMagnet("v", j, 650);
       queueFire();
       requestFrame();
@@ -774,11 +825,37 @@
       flushFire();
     }
 
-    function newPuzzle() {
-      state.seed = Math.floor(Math.random() * 5);
+    function newPuzzle() {   // cycle 0 → 1 → 2 → 3 → 4 → 0; Play and both Watch tabs share it
+      state.seed = (state.seed + 1) % 5;
       state.run = "idle";
       updatePlayButton();
       sendInit();
+    }
+
+    // Yellow "this puzzle" score under each average: live during a Watch run, else the recorded final
+    function renderScoreCards() {
+      document.getElementById("lblPuzzle").textContent = `${state.seed + 1} of 5`;
+      const rec = (state.puzzleScores && state.puzzleScores[state.seed]) || {};
+      [["bayes", "valBayesPuzzle"], ["gemini", "valGeminiPuzzle"]].forEach(([mode, id]) => {
+        const el = document.getElementById(id);
+        if (state.tab === mode && state.run !== "idle") {
+          const r = (state.score && state.score.reward) || 0;
+          el.textContent = state.run === "done"
+            ? `this puzzle: ${r.toFixed(2)}`
+            : `this puzzle: ${r.toFixed(2)} · shot ${state.shot}`;
+        } else {
+          const r = rec[mode];
+          el.textContent = `this puzzle: ${(r === null || r === undefined) ? "—" : r.toFixed(2)}`;
+        }
+      });
+    }
+
+    function updateInfoLine() {
+      const isPlay = state.tab === "play";
+      document.getElementById("infoMain").textContent = isPlay
+        ? "Practice mode: you steer the 12 up–down magnets; the 10 left–right ones are already set for you. The AI has to handle all 22 at once."
+        : "The agent sets all 22 magnets. The beam is lost if it hits the wall in either view.";
+      document.getElementById("infoWiggle").style.display = (!isPlay && state.run === "idle") ? "block" : "none";
     }
 
     function setSpeed(s) {
@@ -799,8 +876,8 @@
         : (t === "bayes" ? "Press Play to watch the algorithm's shots. Pause any time."
                          : "Press Play: replay of a recorded Gemini run. Pause any time.");
       document.getElementById("titleV").textContent = isPlay
-        ? (ai ? "AI view: what the AI gets after each shot" : "Side view: the beam flies left → right through the tube")
-        : "Side view (up–down)";
+        ? (ai ? "AI view: what the AI gets after each shot" : "Side view: 12 up–down magnets (M1–M12) · the beam flies left → right")
+        : "Side view: 12 up–down magnets (M1–M12)";
       document.getElementById("btnAiView").style.display = isPlay ? "inline-flex" : "none";
       const b = document.getElementById("btnAiView");
       b.textContent = state.aiView ? "🤖 AI view: on" : "🤖 AI view: off";
@@ -812,7 +889,8 @@
       document.getElementById("kpiBeam").style.display = ai ? "none" : "inline-flex";
       document.getElementById("slidersTitle").textContent = isPlay
         ? "Magnet strengths (or drag the magnets on the plot)"
-        : "The agent's up–down magnet strengths (read only)";
+        : "The agent's 22 magnet strengths (read only)";
+      document.getElementById("groupH").style.display = isPlay ? "none" : "block";
       document.getElementById("slidersHint").textContent = isPlay
         ? "+ pushes the beam up, − pushes it down"
         : "Magnets flash on the plot when the agent changes them";
@@ -1055,13 +1133,19 @@
     }
 
     // Small text label with a background box, kept inside the canvas
-    function pill(ctx, text, x, y, W, fg, bg, border) {
+    function pill(ctx, text, x, y, W, fg, bg, border, side = "right") {
       ctx.save();
       ctx.font = '600 11px "Inter", sans-serif';
       const tw = ctx.measureText(text).width;
       const w = tw + 14, h = 20;
-      let bx = x + 12;
-      if (bx + w > W - 4) bx = x - 12 - w;
+      let bx;
+      if (side === "left") {   // left of the point; flip right only if it would leave the canvas
+        bx = x - 14 - w;
+        if (bx < 4) bx = x + 14;
+      } else {
+        bx = x + 12;
+        if (bx + w > W - 4) bx = x - 12 - w;
+      }
       bx = Math.max(4, bx);
       const by = y - h / 2;
       roundRect(ctx, bx, by, w, h, 5);
@@ -1259,7 +1343,7 @@
         ctx.textAlign = "center";
         ctx.fillStyle = glow > 0 ? C.accent : C.label;
         const crowded = j > 0 && x - mags[j - 1].x < 24;   // close pair (narrow screens): label below instead
-        ctx.fillText(`M${j + 1}`, x, crowded ? yB + blockH + 11 : yT - blockH - 4);
+        ctx.fillText(magName(d.p, j), x, crowded ? yB + blockH + 11 : yT - blockH - 4);
 
         if (editable) {
           // invisible drag zone: the magnet's whole column, never overlapping its neighbours
@@ -1467,8 +1551,11 @@
       if (editable && active !== null && active !== undefined && mags[active]) {
         const m = mags[active];
         const mrad = m.push * 1000;
-        const txt = `M${active + 1}: ${mrad >= 0 ? "+" : "−"}${Math.abs(mrad).toFixed(2)} mrad`;
-        pill(ctx, txt, m.x, m.tipY === cy ? cy - 22 : m.tipY, W, "#e6f7fc", "rgba(8, 24, 38, 0.92)", `rgba(${C.push}, 0.7)`);
+        const txt = `${magName(d.p, active)}: ${mrad >= 0 ? "+" : "−"}${Math.abs(mrad).toFixed(2)} mrad`;
+        // left of the pointer, so it never covers the sensor ring to the right
+        const px = view.pointer ? view.pointer.x : m.x;
+        const py = view.pointer ? view.pointer.y : (m.tipY === cy ? cy - 22 : m.tipY);
+        pill(ctx, txt, px, py, W, "#e6f7fc", "rgba(8, 24, 38, 0.92)", `rgba(${C.push}, 0.7)`, "left");
       }
     }
 
@@ -1548,7 +1635,7 @@
       const push = -(d.theta[j] || 0) * 1000;
       const dir = push > 0.004 ? d.words[0] : (push < -0.004 ? d.words[1] : null);
       return `
-        <div class="tip-title">Magnet M${j + 1} <span class="tip-muted">· ${Math.round(d.sCorr[j])} m</span></div>
+        <div class="tip-title">Magnet ${magName(d.p, j)} <span class="tip-muted">· ${Math.round(d.sCorr[j])} m</span></div>
         <div>${dir ? `Strength ${Math.abs(push).toFixed(2)} mrad: pushes the beam <b>${dir}</b>` : "Strength 0: no push"}</div>
         <div class="tip-muted" style="margin-top:3px;">The magnet stays in place; only its strength changes. Set by the agent.</div>`;
     }
@@ -1605,6 +1692,7 @@
 
       c.addEventListener("pointerdown", (e) => {
         const [mx, my] = rel(e);
+        view.pointer = { x: mx, y: my };
         const hit = findHit(view, mx, my, e.pointerType);
         if (hit && hit.type === "column") {
           e.preventDefault();
@@ -1624,6 +1712,7 @@
 
       c.addEventListener("pointermove", (e) => {
         const [mx, my] = rel(e);
+        view.pointer = { x: mx, y: my };
         if (drag && drag.pointerId === e.pointerId) { applyDrag(view, my); return; }
         if (e.pointerType !== "mouse") return;
         const hit = findHit(view, mx, my, e.pointerType);
@@ -1667,8 +1756,13 @@
       attachPointer(views.h);
       initSliders();
       applyTexts();
+      updatePlayButton();
       sizeCanvases();
       connectWS();
+      fetch("/api/puzzle_scores")
+        .then(r => r.json())
+        .then(j => { state.puzzleScores = j; renderScoreCards(); })
+        .catch(() => { /* cards keep "—" */ });
     });
   </script>
 </body>

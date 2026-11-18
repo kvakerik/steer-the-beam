@@ -330,6 +330,57 @@ def compute_bayes_run(seed: int, feed: ShotFeed, cancel: threading.Event) -> Opt
     return env
 
 
+GEMINI_TRIAL = 2   # recorded Gemini run shown per puzzle (trial 1 files are empty)
+
+
+def load_gemini_run(seed: int, trial: int = GEMINI_TRIAL) -> Optional[dict[str, Any]]:
+    """Recorded OpenCode + Gemini run for `seed`: the requested trial, else the first one with shots."""
+    candidates = [RUNS_DIR / f"beam-steering-s{seed:03d}_{trial}.json"]
+    candidates += sorted(RUNS_DIR.glob(f"beam-steering-s{seed:03d}_*.json"))
+    for f in candidates:
+        if not f.exists():
+            continue
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if data.get("shots"):
+            return data
+    return None
+
+
+def _replay_reward(seed: int, shots: Optional[list[dict[str, Any]]]) -> Optional[float]:
+    """Final 0-1 reward of replaying `shots` on BeamlineEnv(seed), exactly as the Watch tab does."""
+    if not shots:
+        return None
+    env = BeamlineEnv(seed=seed, budget=60)
+    for s in shots[:60]:
+        env.set_correctors(s.get("theta_h", [0.0] * 10), s.get("theta_v", [0.0] * 12))
+    env.submit()
+    return float(evaluate_env(env).reward)
+
+
+_puzzle_scores: Optional[dict[int, dict[str, Optional[float]]]] = None
+
+
+@app.get("/api/puzzle_scores")
+async def get_puzzle_scores():
+    """Final score of the recorded algorithm and Gemini runs for each website puzzle (seeds 0-4)."""
+    global _puzzle_scores
+    if _puzzle_scores is None:
+        scores: dict[int, dict[str, Optional[float]]] = {}
+        for seed in range(5):
+            with _bayes_cache_lock:
+                bayes_shots = _bayes_cache.get(seed)
+            gem = load_gemini_run(seed)
+            scores[seed] = {
+                "bayes": _replay_reward(seed, bayes_shots),
+                "gemini": _replay_reward(seed, gem.get("shots") if gem else None),
+            }
+        _puzzle_scores = scores
+    return JSONResponse(_puzzle_scores)
+
+
 def _bayes_producer(seed: int, feed: ShotFeed, cancel: threading.Event) -> None:
     """Fallback when no recording exists: compute live, then cache for the next viewer."""
     try:
@@ -573,20 +624,13 @@ async def websocket_endpoint(websocket: WebSocket):
                             target=_bayes_producer, args=(session.seed, feed, cancel), daemon=True,
                         ).start()
                 else:
-                    trial_num = int(msg.get("trial", 2))
-                    run_file = RUNS_DIR / f"beam-steering-s{session.seed:03d}_{trial_num}.json"
-                    if not run_file.exists():
-                        for fb in sorted(RUNS_DIR.glob(f"beam-steering-s{session.seed:03d}_*.json")):
-                            run_file = fb
-                            break
-                    if not run_file.exists():
+                    run_data = load_gemini_run(session.seed, int(msg.get("trial", GEMINI_TRIAL)))
+                    if run_data is None:
                         await session.ws.send_text(json.dumps({
                             "type": "error",
                             "message": f"No replay file found for seed {session.seed}",
                         }))
                         continue
-                    with open(run_file, "r", encoding="utf-8") as rf:
-                        run_data = json.load(rf)
                     feed = ShotFeed([
                         {"theta_h": s.get("theta_h", [0.0] * 10), "theta_v": s.get("theta_v", [0.0] * 12)}
                         for s in run_data.get("shots", [])
