@@ -1378,6 +1378,7 @@
     /* ------------------------------------------------------------------ */
     function sizeCanvas(view, cssH) {
       const c = view.canvas;
+      if (!c) return;   // a resize can fire before the page has finished loading
       const w = c.clientWidth;
       if (!w) return;
       const dpr = window.devicePixelRatio || 1;
