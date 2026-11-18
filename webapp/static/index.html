@@ -6,6 +6,7 @@
   <title>Steer the Beam — CERN TT20</title>
   <meta name="description" content="A CERN beam-steering puzzle as an AI benchmark. Try it yourself, then watch a Bayesian algorithm (67%) and Gemini (29%) on the same puzzle.">
   <link rel="canonical" href="https://kvakerik--steer-the-beam.modal.run/">
+  <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
   <!-- Link previews (LinkedIn, Slack, X, ...): absolute URLs -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Steer the Beam">
@@ -68,13 +69,7 @@
       gap: 12px;
     }
     .brand { display: flex; align-items: center; gap: 14px; }
-    .brand-logo {
-      width: 44px; height: 44px; border-radius: 10px;
-      background: linear-gradient(135deg, var(--accent), #e07a22);
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 16px; font-family: 'Space Grotesk', sans-serif;
-      color: #fff; box-shadow: 0 4px 14px rgba(242, 153, 74, 0.35);
-    }
+    .brand-icon { width: 44px; height: 44px; flex: none; display: block; filter: drop-shadow(0 4px 12px rgba(92, 200, 230, 0.18)); }
     .brand h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
     .brand p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
     .ws-status {
@@ -347,6 +342,8 @@
     }
     .about-content p { margin-top: 10px; max-width: 900px; }
     .about-content strong { color: var(--text); }
+    .about-content .about-note { font-size: 12px; font-style: italic; }
+    .site-footer { padding: 4px 28px 22px; font-size: 11px; color: var(--text-muted); text-align: center; }
 
     @media (max-width: 640px) {
       header, .dashboard-cards, .tabs-bar, .sub-bar, .content-area, .info-wrap { padding-left: 16px; padding-right: 16px; }
@@ -376,7 +373,7 @@
 <body>
   <header>
     <div class="brand">
-      <div class="brand-logo">CERN</div>
+      <img class="brand-icon" src="/static/icon.svg" alt="" width="44" height="44">
       <div>
         <h1>Steer the Beam</h1>
         <p>CERN fires protons down a 900 m tube, and 22 magnets aim them. The goal: centre the beam to 95%, good enough for physics. Can you do it better than an AI?</p>
@@ -552,6 +549,7 @@
         <p>This website is a simulation of that problem, built as a test for AI agents. The agent sees only what an operator sees: 21 sensors, each made of two thin metal plates that the beam passes through. If both plates get the same amount of beam, it’s centred. Each try (“shot”) gives only a small, noisy clue, and the true magnet errors stay hidden.</p>
         <p><strong>Why it matters:</strong> AI is starting to be trusted with real scientific work. This task can’t be solved by guessing or by recalling an answer: you have to combine noisy clues over many shots and reason about what you can’t see. A dedicated statistical algorithm centres the beam to 67% on average; Gemini, one of today’s best AI models, only to 29%.</p>
         <p><strong>Why the goal is 95%, not 100%:</strong> the sensors are noisy, and the real machine never matches its blueprint exactly, so perfect centring isn’t reachable. Above about 95% the beam passes the whole line cleanly, which is good enough for the experiments. 95% is the “solved” threshold of the CERN study this project builds on.</p>
+        <p class="about-note">Independent project based on a published CERN study. Not affiliated with or endorsed by CERN.</p>
       </div>
     </details>
 
@@ -573,6 +571,8 @@
       </div>
     </details>
   </div>
+
+  <footer class="site-footer">Independent project based on a published CERN study. Not affiliated with or endorsed by CERN.</footer>
 
   <script>
     const state = {
