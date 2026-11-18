@@ -95,9 +95,8 @@
     .db-card-title { font-size: 15px; font-weight: 700; color: var(--text); }
     .db-card-sub { font-size: 11px; color: var(--text-muted); }
     .db-card-val { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--gold); }
-    .db-card-val.avg { color: var(--text); }
     .db-card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-    .db-card-puzzle { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: var(--gold); white-space: nowrap; }
+    .db-card-avg { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; }
 
     /* One-line explanation above the plots */
     .info-line {
@@ -157,10 +156,6 @@
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
     }
     .ctrl-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .goal-note {
-      font-size: 11px; font-weight: 600; color: var(--gold); white-space: nowrap;
-      border: 1px dashed rgba(242, 201, 76, 0.55); border-radius: 6px; padding: 5px 9px;
-    }
     .txt-short { display: none; }
     /* scrolling to a plot (or the sliders) stops just below the sticky bar */
     .canvas-card, .sliders-card { scroll-margin-top: calc(var(--bar-h, 64px) + 10px); }
@@ -303,23 +298,26 @@
       margin-top: 8px;
     }
 
-    /* Collapsible Physicist Box */
-    .physicist-box {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-top: auto;
-      overflow: hidden;
+    /* Two collapsible plain-text sections at the bottom */
+    .about-box {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+      scroll-margin-top: calc(var(--bar-h, 64px) + 10px);   /* stop below the sticky bar */
     }
-    .physicist-header {
-      padding: 10px 16px; display: flex; justify-content: space-between; align-items: center;
-      cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-muted); user-select: none;
+    .about-box summary {
+      list-style: none; cursor: pointer; user-select: none; padding: 11px 16px;
+      display: flex; align-items: center; gap: 8px;
+      font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: var(--text);
     }
-    .physicist-header:hover { background: rgba(255,255,255,0.02); color: var(--text); }
-    .physicist-content {
-      padding: 12px 16px; font-size: 12px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid var(--border);
+    .about-box summary::-webkit-details-marker { display: none; }
+    .about-box summary::before { content: "▸"; color: var(--accent); display: inline-block; transition: transform 0.15s ease; }
+    .about-box[open] summary::before { transform: rotate(90deg); }
+    .about-box summary:hover { background: rgba(255, 255, 255, 0.03); }
+    .about-content {
+      padding: 2px 16px 14px; border-top: 1px solid var(--border);
+      font-size: 13px; line-height: 1.6; color: var(--text-muted);
     }
-    .physicist-content p + p { margin-top: 8px; }
+    .about-content p { margin-top: 10px; max-width: 900px; }
+    .about-content strong { color: var(--text); }
 
     @media (max-width: 640px) {
       header, .dashboard-cards, .tabs-bar, .sub-bar, .content-area, .info-wrap { padding-left: 16px; padding-right: 16px; }
@@ -328,7 +326,6 @@
       .kpi-row, .ctrl-row { display: contents; }
       .kpi-badge { padding: 4px 7px; font-size: 11px; gap: 4px; }
       .kpi-badge .label { font-size: 8px; margin-right: 0; }
-      .goal-note { font-size: 10px; padding: 3px 5px; }
       .sub-bar .btn-action.spd-btn { padding: 4px 6px; }
       #btnPlayPause { min-width: 34px; justify-content: center; }
       .sub-bar .btn-action { padding: 5px 9px; font-size: 12px; }
@@ -353,7 +350,7 @@
       <div class="brand-logo">CERN</div>
       <div>
         <h1>Steer the Beam</h1>
-        <p>CERN fires protons down a 900 m tube. 22 magnets aim them. Can you thread the beam better than an AI?</p>
+        <p>CERN fires protons down a 900 m tube, and 22 magnets aim them. The goal: centre the beam to 95%, good enough for physics. Can you do it better than an AI?</p>
       </div>
     </div>
     <div id="wsStatus" class="ws-status disconnected">
@@ -389,21 +386,21 @@
     <div class="db-card" id="cardBayes">
       <div class="db-card-left">
         <span class="db-card-title">🧠 Algorithm</span>
-        <span class="db-card-sub">centring, average over 5 puzzles</span>
+        <span class="db-card-sub" id="subBayes">centring on this puzzle</span>
       </div>
       <div class="db-card-right">
-        <span class="db-card-val avg" id="valBayesAvg">—</span>
-        <span class="db-card-puzzle" id="valBayesPuzzle">this puzzle: —</span>
+        <span class="db-card-val" id="valBayesPuzzle">—</span>
+        <span class="db-card-avg" id="valBayesAvg">average over 5 puzzles: —</span>
       </div>
     </div>
     <div class="db-card" id="cardGemini">
       <div class="db-card-left">
         <span class="db-card-title">🤖 Gemini AI</span>
-        <span class="db-card-sub">centring, average over 5 puzzles</span>
+        <span class="db-card-sub" id="subGemini">centring on this puzzle</span>
       </div>
       <div class="db-card-right">
-        <span class="db-card-val avg" id="valGeminiAvg">—</span>
-        <span class="db-card-puzzle" id="valGeminiPuzzle">this puzzle: —</span>
+        <span class="db-card-val" id="valGeminiPuzzle">—</span>
+        <span class="db-card-avg" id="valGeminiAvg">average over 5 puzzles: —</span>
       </div>
     </div>
   </div>
@@ -419,7 +416,6 @@
         <span class="label">Centring</span>
         <span id="lblLiveCentring" style="color:var(--gold);">0.0%</span>
       </div>
-      <span class="goal-note" id="goalNote"><span class="txt-long">goal 95% = ready for physics</span><span class="txt-short">goal 95%</span></span>
       <div class="kpi-badge" id="boxShot" style="display:none;">
         <span class="label">Shot</span>
         <span id="lblLiveShot">0 / 60</span>
@@ -514,21 +510,29 @@
       <div id="geminiBox" class="gemini-reasoning-box">Gemini thoughts and actions will stream here during replay...</div>
     </div>
 
-    <!-- Collapsible Details for physicists -->
-    <div class="physicist-box">
-      <div class="physicist-header" onclick="togglePhysicist()">
-        <span>🔬 <strong>Details for physicists</strong></span>
-        <span id="physicistArrow">▶</span>
+    <!-- Background and technical details (collapsible, plain text) -->
+    <details class="about-box">
+      <summary>What is this?</summary>
+      <div class="about-content">
+        <p>At CERN, a proton beam flies almost a kilometre through a vacuum tube, from one accelerator to the experiments. 22 small “corrector” magnets keep it on track: 12 push it up or down, 10 push it left or right. After every maintenance break their settings are slightly off, and the beam crashes into the wall. Operators then spend hours re-steering it by hand, mostly blind, because once the beam is lost, every sensor after that point goes dark.</p>
+        <p>This website is a simulation of that problem, built as a test for AI agents. The agent sees only what an operator sees: 21 sensors, each made of two thin metal plates that the beam passes through. If both plates get the same amount of beam, it’s centred. Each try (“shot”) gives only a small, noisy clue, and the true magnet errors stay hidden.</p>
+        <p><strong>Why it matters:</strong> AI is starting to be trusted with real scientific work. This task can’t be solved by guessing or by recalling an answer: you have to combine noisy clues over many shots and reason about what you can’t see. A dedicated statistical algorithm centres the beam to 67% on average; Gemini, one of today’s best AI models, only to 29%.</p>
+        <p><strong>Why the goal is 95%, not 100%:</strong> the sensors are noisy, and the real machine never matches its blueprint exactly, so perfect centring isn’t reachable. Above about 95% the beam passes the whole line cleanly, which is good enough for the experiments. 95% is the “solved” threshold of the CERN study this project builds on.</p>
       </div>
-      <div id="physicistContent" class="physicist-content" style="display:none;">
-        <p><strong>CERN TT20 Transfer Line:</strong> 400 GeV/c slow-extracted proton beam from SPS to North Area target over 900 meters. Uncoupled linear optics with 10 horizontal / 12 vertical corrector dipoles and 11 horizontal / 10 vertical split-foil secondary emission monitors (SEMs). Uniform background noise &nu; = 0.25, Table 1 medium optics randomization. The Bayesian benchmark uses a 100k-particle filter (Adam Štafa CERN report, 2026).</p>
-        <p><strong>Plot:</strong> the tube is the aperture profile a(s) at 5 m checkpoints; the beam is the true trajectory x(s) = R(Δθ − gθ) on the perturbed machine (god view, never shown to the agent). Magnet arrows show the commanded push −θ (the hidden offset Δθ is not drawn); slider values use the same sign, so they are the negative of the machine's θ that Gemini reasons about. Centring % (the badge and all three cards) = 100 × the true mean normalised symmetry Ŝ over all 21 sensors, i.e. S_f in the reward. The white dot inside each ring is the true offset x/σ at that monitor (nominal σ), with the ring edge at 0.5σ and the faint inner circle at 0.25σ; the ring is green when |x| &lt; 0.25σ (≈ Ŝ 0.90 for these foils, about 11σ long), so dot and colour come from the same number. A hollow dot means the offset is beyond the ring edge. The plate bars are the noisy foil readings I₁ = r·ℓ (lower/right foil) and I₂ = (1−r)·ℓ (upper/left foil) — exactly what the agent receives in AI view.</p>
-        <p><strong>Benchmark score (0–1, used in the evaluation):</strong> Algorithm 0.50, Gemini 0.26. See the README.</p>
-        <p><strong>Why 95%:</strong> 95% is the ‘solved’ threshold of the underlying CERN study: sensor noise and model mismatch make 100% unreachable in practice.</p>
-        <p><strong>Magnet numbers:</strong> M1–M12 are the 12 vertical correctors (θ_v[0–11]), M13–M22 the 10 horizontal ones (θ_h[0–9]). In Play only the vertical plane is yours; the horizontal correctors are pre-set to a good solution for that puzzle.</p>
-        <p><strong>Watch the algorithm</strong> replays a precomputed run of the honest reference (BayesAgent, 100k particles, roughening 0.2, agent seed = env seed + 1 000 003, budget 60). Replaying its corrector settings through the same BeamlineEnv(seed) reproduces the run exactly; precomputing lets speed and pause work.</p>
+    </details>
+
+    <details class="about-box">
+      <summary>Technical details</summary>
+      <div class="about-content">
+        <p><strong>Machine:</strong> a simulated CERN transfer line (900 m, 400 GeV protons), with 22 corrector magnets (12 vertical = M1–M12, 10 horizontal = M13–M22) and 21 split-plate sensors. The simulation includes sensor noise and a slightly perturbed real machine compared with the blueprint the agent receives. It’s based on a published CERN study on beam steering (A. Štafa, 2026).</p>
+        <p><strong>What you see on the plot:</strong> the tube is the pipe wall, and the orange line is the true beam path (never shown to the agent, see “AI view”). The arrows show how hard each magnet pushes; the hidden errors are not drawn.</p>
+        <p><strong>Sensor rings:</strong> the white dot shows how far the beam passes from the centre, measured in beam widths. Inside the small circle = centred (green); inside the ring = off-centre (yellow); outside = far off.</p>
+        <p><strong>Centring %:</strong> the average centring over all 21 sensors.</p>
+        <p><strong>Benchmark score:</strong> in the official evaluation each run also gets a score from 0 to 1 (Algorithm 0.50, Gemini 0.26). It’s computed from the same centring; see the README.</p>
+        <p><strong>The algorithm:</strong> a Bayesian particle filter (100,000 guesses about the hidden errors, updated after every shot). The website replays its recorded runs, which is why pause and speed work.</p>
+        <p><strong>Play mode:</strong> you steer the 12 up–down magnets; the left–right ones are already set for you.</p>
       </div>
-    </div>
+    </details>
   </div>
 
   <script>
@@ -604,14 +608,6 @@
     /* ------------------------------------------------------------------ */
     /* WebSocket                                                           */
     /* ------------------------------------------------------------------ */
-    function togglePhysicist() {
-      const el = document.getElementById("physicistContent");
-      const arr = document.getElementById("physicistArrow");
-      const isHidden = el.style.display === "none";
-      el.style.display = isHidden ? "block" : "none";
-      arr.textContent = isHidden ? "▼" : "▶";
-    }
-
     function connectWS() {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -748,7 +744,7 @@
       const b = document.getElementById("btnPlayPause");
       const labels = { idle: ["▶", "Play"], playing: ["⏸", "Pause"], paused: ["▶", "Resume"], done: ["↻", "Play again"] };
       const [icon, word] = labels[state.run] || labels.idle;
-      b.innerHTML = `<span class="txt-long">${icon} ${word}</span><span class="txt-short">${icon}</span>`;
+      b.textContent = `${icon} ${word}`;
       b.title = word;
       b.setAttribute("aria-label", word);
       b.className = state.run === "playing" ? "btn-action" : "btn-action btn-accent";
@@ -888,18 +884,14 @@
       const rec = (ps.puzzles && ps.puzzles[state.seed]) || {};
       const avg = ps.average || {};
       const pct = v => (v === null || v === undefined) ? "—" : v.toFixed(1) + "%";
-      document.getElementById("valBayesAvg").textContent = pct(avg.bayes);
-      document.getElementById("valGeminiAvg").textContent = pct(avg.gemini);
-      [["bayes", "valBayesPuzzle"], ["gemini", "valGeminiPuzzle"]].forEach(([mode, id]) => {
-        const el = document.getElementById(id);
-        if (state.tab === mode && state.run !== "idle") {   // live: the same number as the CENTRING badge
-          const c = ((state.score && state.score.sf) || 0) * 100;
-          el.textContent = state.run === "done"
-            ? `this puzzle: ${pct(c)}`
-            : `this puzzle: ${pct(c)} · shot ${state.shot}`;
-        } else {
-          el.textContent = `this puzzle: ${pct(rec[mode])}`;
-        }
+      [["bayes", "Bayes"], ["gemini", "Gemini"]].forEach(([mode, name]) => {
+        // big yellow number = this puzzle: live during a Watch run (same number as the CENTRING badge)
+        const live = state.tab === mode && state.run !== "idle";
+        const value = live ? ((state.score && state.score.sf) || 0) * 100 : rec[mode];
+        document.getElementById(`val${name}Puzzle`).textContent = pct(value);
+        document.getElementById(`sub${name}`).textContent = !live ? "centring on this puzzle"
+          : (state.run === "done" ? "centring on this puzzle · final" : `centring on this puzzle · live, shot ${state.shot}`);
+        document.getElementById(`val${name}Avg`).textContent = `average over 5 puzzles: ${pct(avg[mode])}`;
       });
     }
 
@@ -935,7 +927,6 @@
       document.getElementById("legendAi").style.display = ai ? "flex" : "none";
       document.getElementById("legendHandle").style.display = isPlay ? "inline-flex" : "none";
       document.getElementById("kpiCentring").style.display = ai ? "none" : "inline-flex";   // they reveal the true beam
-      document.getElementById("goalNote").style.display = ai ? "none" : "";
       document.getElementById("kpiBeam").style.display = ai ? "none" : "inline-flex";
       document.getElementById("slidersTitle").textContent = isPlay
         ? "Magnet strengths (or drag the magnets on the plot)"
