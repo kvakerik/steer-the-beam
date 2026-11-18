@@ -36,7 +36,7 @@ if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])   # HEAD too: some link-preview crawlers probe first
 async def get_index():
     index_file = STATIC_DIR / "index.html"
     if index_file.exists():
@@ -49,6 +49,18 @@ async def get_index():
             },
         )
     return JSONResponse({"status": "ok", "message": "Demo webapp running"})
+
+
+@app.api_route("/og.png", methods=["GET", "HEAD"])
+async def get_og_image():
+    """1200x630 link-preview image (Open Graph / Twitter card)."""
+    if not (STATIC_DIR / "og.png").exists():
+        return JSONResponse({"detail": "Not Found"}, status_code=404)
+    return FileResponse(
+        STATIC_DIR / "og.png",
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @app.get("/api/replays")

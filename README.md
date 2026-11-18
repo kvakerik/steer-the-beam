@@ -1,5 +1,12 @@
 # TT20 Beam Steering — an RL environment where frontier agents must do real inference
 
+**▶ Try it live: [kvakerik--steer-the-beam.modal.run](https://kvakerik--steer-the-beam.modal.run)**: steer the beam yourself, then watch a Bayesian algorithm (67 %) and Gemini (29 %) on the same puzzle.
+(Hackathon version, as submitted at Junction 2026: [kvakerik--tt20-beam-steering-webapp-fastapi-app.us-east.modal.run](https://kvakerik--tt20-beam-steering-webapp-fastapi-app.us-east.modal.run))
+
+| Play | Watch the algorithm | Watch Gemini |
+| :---: | :---: | :---: |
+| [![Play: steer the 12 up–down magnets](docs/screenshots/v2-play.png)](docs/screenshots/v2-play.png) | [![Watch the algorithm: the Bayesian particle filter centres the beam to 88 % on puzzle 4](docs/screenshots/v2-watch-algorithm.png)](docs/screenshots/v2-watch-algorithm.png) | [![Watch Gemini: a recorded Gemini run reaches 23 % on puzzle 4](docs/screenshots/v2-watch-gemini.png)](docs/screenshots/v2-watch-gemini.png) |
+
 An agent operates a simulated CERN proton transfer line (TT20-like, SPS → North Area).
 Every corrector magnet has an unknown misalignment. The agent sets 22 corrector magnets and
 sees only noisy split-foil monitor readings. It has to **thread the beam through the whole
@@ -12,8 +19,8 @@ Steering the CERN TT20 Transfer Line"* (2026), see `docs/tt20_report.md`.
 
 Try the live interactive demo, deployed publicly on Modal:
 
-- 👉 **v2 (redesigned for non-physicists):** [https://kvakerik--steer-the-beam-v2-fastapi-app.us-east.modal.run](https://kvakerik--steer-the-beam-v2-fastapi-app.us-east.modal.run)
-- **v1 (version submitted at Junction 2026):** [https://kvakerik--tt20-beam-steering-webapp-fastapi-app.us-east.modal.run](https://kvakerik--tt20-beam-steering-webapp-fastapi-app.us-east.modal.run)
+- 👉 **Live website (redesigned for non-physicists):** [https://kvakerik--steer-the-beam.modal.run](https://kvakerik--steer-the-beam.modal.run)
+- **Hackathon version** (as submitted at Junction 2026, kept unchanged): [https://kvakerik--tt20-beam-steering-webapp-fastapi-app.us-east.modal.run](https://kvakerik--tt20-beam-steering-webapp-fastapi-app.us-east.modal.run)
 
 - **Play:** drag the 12 up–down magnets on the plot (or use the sliders) to thread the proton beam through the centre of every sensor. The **AI view** toggle hides the beam and shows only the noisy sensor readings the agent gets; a blind attempt in AI view is the fair comparison with the agents.
 - **Watch the algorithm:** replay of recorded honest Bayes runs (seeds 0–4): the reference `BayesAgent` (100,000 particles, roughening 0.2, independent agent seed), recorded with `python -m webapp.record_bayes` and replayed through the same `BeamlineEnv(seed)`, which reproduces each run exactly.

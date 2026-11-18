@@ -30,7 +30,7 @@ image = (
     min_containers=0,
     timeout=600,
 )
-@modal.asgi_app()
+@modal.asgi_app(label="steer-the-beam")   # URL: https://kvakerik--steer-the-beam.modal.run
 def fastapi_app():
     import sys
     if "/root" not in sys.path:
