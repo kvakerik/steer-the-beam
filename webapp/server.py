@@ -349,35 +349,43 @@ def load_gemini_run(seed: int, trial: int = GEMINI_TRIAL) -> Optional[dict[str, 
     return None
 
 
-def _replay_reward(seed: int, shots: Optional[list[dict[str, Any]]]) -> Optional[float]:
-    """Final 0-1 reward of replaying `shots` on BeamlineEnv(seed), exactly as the Watch tab does."""
+def _replay_centring(seed: int, shots: Optional[list[dict[str, Any]]]) -> Optional[float]:
+    """Final centring % of replaying `shots` on BeamlineEnv(seed), exactly as the Watch tab does.
+
+    Centring % = 100 x the true mean normalised symmetry over all 21 sensors (S_f of the reward),
+    the same number the website's CENTRING badge shows.
+    """
     if not shots:
         return None
     env = BeamlineEnv(seed=seed, budget=60)
     for s in shots[:60]:
         env.set_correctors(s.get("theta_h", [0.0] * 10), s.get("theta_v", [0.0] * 12))
     env.submit()
-    return float(evaluate_env(env).reward)
+    return float(evaluate_env(env).sf) * 100.0
 
 
-_puzzle_scores: Optional[dict[int, dict[str, Optional[float]]]] = None
+_puzzle_scores: Optional[dict[str, Any]] = None
 
 
 @app.get("/api/puzzle_scores")
 async def get_puzzle_scores():
-    """Final score of the recorded algorithm and Gemini runs for each website puzzle (seeds 0-4)."""
+    """Final centring % of the recorded algorithm and Gemini runs per website puzzle (seeds 0-4)."""
     global _puzzle_scores
     if _puzzle_scores is None:
-        scores: dict[int, dict[str, Optional[float]]] = {}
+        puzzles: dict[int, dict[str, Optional[float]]] = {}
         for seed in range(5):
             with _bayes_cache_lock:
                 bayes_shots = _bayes_cache.get(seed)
             gem = load_gemini_run(seed)
-            scores[seed] = {
-                "bayes": _replay_reward(seed, bayes_shots),
-                "gemini": _replay_reward(seed, gem.get("shots") if gem else None),
+            puzzles[seed] = {
+                "bayes": _replay_centring(seed, bayes_shots),
+                "gemini": _replay_centring(seed, gem.get("shots") if gem else None),
             }
-        _puzzle_scores = scores
+        average: dict[str, Optional[float]] = {}
+        for agent in ("bayes", "gemini"):
+            vals = [p[agent] for p in puzzles.values() if p[agent] is not None]
+            average[agent] = sum(vals) / len(vals) if vals else None
+        _puzzle_scores = {"metric": "centring_percent", "puzzles": puzzles, "average": average}
     return JSONResponse(_puzzle_scores)
 
 

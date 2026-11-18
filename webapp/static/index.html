@@ -157,6 +157,10 @@
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
     }
     .ctrl-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .goal-note {
+      font-size: 11px; font-weight: 600; color: var(--gold); white-space: nowrap;
+      border: 1px dashed rgba(242, 201, 76, 0.55); border-radius: 6px; padding: 5px 9px;
+    }
     .txt-short { display: none; }
     /* scrolling to a plot (or the sliders) stops just below the sticky bar */
     .canvas-card, .sliders-card { scroll-margin-top: calc(var(--bar-h, 64px) + 10px); }
@@ -176,6 +180,7 @@
     .btn-action:hover { background: #243b61; border-color: #3b5682; }
     .btn-action.btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; }
     .btn-action.btn-accent:hover { background: #e07a22; }
+    .spd-btn { padding: 4px 9px; font-size: 12px; }
     .btn-toggle {
       background: #111f36; color: var(--text-muted); border: 1px solid var(--border);
       padding: 5px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; cursor: pointer;
@@ -323,6 +328,9 @@
       .kpi-row, .ctrl-row { display: contents; }
       .kpi-badge { padding: 4px 7px; font-size: 11px; gap: 4px; }
       .kpi-badge .label { font-size: 8px; margin-right: 0; }
+      .goal-note { font-size: 10px; padding: 3px 5px; }
+      .sub-bar .btn-action.spd-btn { padding: 4px 6px; }
+      #btnPlayPause { min-width: 34px; justify-content: center; }
       .sub-bar .btn-action { padding: 5px 9px; font-size: 12px; }
       .speed-label { display: none; }
       .txt-long { display: none; }
@@ -334,6 +342,7 @@
       .kpi-badge { padding: 3px 4px; font-size: 10px; gap: 3px; }
       .kpi-badge .label { font-size: 7px; }
       .sub-bar .btn-action { padding: 5px 7px; }
+      .sub-bar .btn-action.spd-btn { padding: 4px 5px; }
     }
   </style>
 </head>
@@ -373,27 +382,27 @@
     <div class="db-card active-db" id="cardYou">
       <div class="db-card-left">
         <span class="db-card-title">🧑 You: best on this puzzle</span>
-        <span class="db-card-sub">practice: one plane, centring %</span>
+        <span class="db-card-sub">practice: up–down plane only (the agents steer both planes)</span>
       </div>
       <span class="db-card-val" id="valYouBest">—</span>
     </div>
     <div class="db-card" id="cardBayes">
       <div class="db-card-left">
         <span class="db-card-title">🧠 Algorithm</span>
-        <span class="db-card-sub">average score over our evaluation (0–1)</span>
+        <span class="db-card-sub">centring, average over 5 puzzles</span>
       </div>
       <div class="db-card-right">
-        <span class="db-card-val avg">0.50</span>
+        <span class="db-card-val avg" id="valBayesAvg">—</span>
         <span class="db-card-puzzle" id="valBayesPuzzle">this puzzle: —</span>
       </div>
     </div>
     <div class="db-card" id="cardGemini">
       <div class="db-card-left">
         <span class="db-card-title">🤖 Gemini AI</span>
-        <span class="db-card-sub">average score over our evaluation (0–1)</span>
+        <span class="db-card-sub">centring, average over 5 puzzles</span>
       </div>
       <div class="db-card-right">
-        <span class="db-card-val avg">0.26</span>
+        <span class="db-card-val avg" id="valGeminiAvg">—</span>
         <span class="db-card-puzzle" id="valGeminiPuzzle">this puzzle: —</span>
       </div>
     </div>
@@ -410,6 +419,7 @@
         <span class="label">Centring</span>
         <span id="lblLiveCentring" style="color:var(--gold);">0.0%</span>
       </div>
+      <span class="goal-note" id="goalNote"><span class="txt-long">goal 95% = ready for physics</span><span class="txt-short">goal 95%</span></span>
       <div class="kpi-badge" id="boxShot" style="display:none;">
         <span class="label">Shot</span>
         <span id="lblLiveShot">0 / 60</span>
@@ -423,9 +433,9 @@
     <div class="ctrl-row">
       <div id="speedButtonsGroup" style="display:none; align-items:center; gap:4px; margin-right:4px;">
         <span class="speed-label" style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">Speed:</span>
-        <button class="btn-action" id="spd1" style="padding:4px 9px; font-size:12px;" onclick="setSpeed(1.0)">1×</button>
-        <button class="btn-action btn-accent" id="spd3" style="padding:4px 9px; font-size:12px;" onclick="setSpeed(3.0)">3×</button>
-        <button class="btn-action" id="spd10" style="padding:4px 9px; font-size:12px;" onclick="setSpeed(10.0)">10×</button>
+        <button class="btn-action spd-btn" id="spd1" onclick="setSpeed(1.0)">1×</button>
+        <button class="btn-action spd-btn btn-accent" id="spd3" onclick="setSpeed(3.0)">3×</button>
+        <button class="btn-action spd-btn" id="spd10" onclick="setSpeed(10.0)">10×</button>
       </div>
       <button id="btnPlayPause" class="btn-action btn-accent" style="display:none;" onclick="togglePlayPause()">▶ Play</button>
       <button class="btn-action" onclick="newPuzzle()">🔀 <span class="txt-long">Next puzzle</span><span class="txt-short">Next</span></button>
@@ -512,7 +522,9 @@
       </div>
       <div id="physicistContent" class="physicist-content" style="display:none;">
         <p><strong>CERN TT20 Transfer Line:</strong> 400 GeV/c slow-extracted proton beam from SPS to North Area target over 900 meters. Uncoupled linear optics with 10 horizontal / 12 vertical corrector dipoles and 11 horizontal / 10 vertical split-foil secondary emission monitors (SEMs). Uniform background noise &nu; = 0.25, Table 1 medium optics randomization. The Bayesian benchmark uses a 100k-particle filter (Adam Štafa CERN report, 2026).</p>
-        <p><strong>Plot:</strong> the tube is the aperture profile a(s) at 5 m checkpoints; the beam is the true trajectory x(s) = R(Δθ − gθ) on the perturbed machine (god view, never shown to the agent). Magnet arrows show the commanded push −θ (the hidden offset Δθ is not drawn); slider values use the same sign, so they are the negative of the machine's θ that Gemini reasons about. The Centring % badge is the mean true normalised symmetry Ŝ. The white dot inside each ring is the true offset x/σ at that monitor (nominal σ), with the ring edge at 0.5σ and the faint inner circle at 0.25σ; the ring is green when |x| &lt; 0.25σ (≈ Ŝ 0.90 for these foils, about 11σ long), so dot and colour come from the same number. A hollow dot means the offset is beyond the ring edge. The plate bars are the noisy foil readings I₁ = r·ℓ (lower/right foil) and I₂ = (1−r)·ℓ (upper/left foil) — exactly what the agent receives in AI view.</p>
+        <p><strong>Plot:</strong> the tube is the aperture profile a(s) at 5 m checkpoints; the beam is the true trajectory x(s) = R(Δθ − gθ) on the perturbed machine (god view, never shown to the agent). Magnet arrows show the commanded push −θ (the hidden offset Δθ is not drawn); slider values use the same sign, so they are the negative of the machine's θ that Gemini reasons about. Centring % (the badge and all three cards) = 100 × the true mean normalised symmetry Ŝ over all 21 sensors, i.e. S_f in the reward. The white dot inside each ring is the true offset x/σ at that monitor (nominal σ), with the ring edge at 0.5σ and the faint inner circle at 0.25σ; the ring is green when |x| &lt; 0.25σ (≈ Ŝ 0.90 for these foils, about 11σ long), so dot and colour come from the same number. A hollow dot means the offset is beyond the ring edge. The plate bars are the noisy foil readings I₁ = r·ℓ (lower/right foil) and I₂ = (1−r)·ℓ (upper/left foil) — exactly what the agent receives in AI view.</p>
+        <p><strong>Benchmark score (0–1, used in the evaluation):</strong> Algorithm 0.50, Gemini 0.26. See the README.</p>
+        <p><strong>Why 95%:</strong> 95% is the ‘solved’ threshold of the underlying CERN study: sensor noise and model mismatch make 100% unreachable in practice.</p>
         <p><strong>Magnet numbers:</strong> M1–M12 are the 12 vertical correctors (θ_v[0–11]), M13–M22 the 10 horizontal ones (θ_h[0–9]). In Play only the vertical plane is yours; the horizontal correctors are pre-set to a good solution for that puzzle.</p>
         <p><strong>Watch the algorithm</strong> replays a precomputed run of the honest reference (BayesAgent, 100k particles, roughening 0.2, agent seed = env seed + 1 000 003, budget 60). Replaying its corrector settings through the same BeamlineEnv(seed) reproduces the run exactly; precomputing lets speed and pause work.</p>
       </div>
@@ -674,9 +686,8 @@
 
       if (state.tab !== "play" && data.done && state.run !== "idle") state.run = "done";
 
-      const centringVal = state.tab === "play"
-        ? (data.score.centring_v || (data.score.sf * 100))
-        : (data.score.centring_all || (data.score.sf * 100));
+      // One metric everywhere: true mean centring over all 21 sensors (S_f), in %
+      const centringVal = (data.score.sf || 0) * 100;
 
       if (state.tab === "play" && centringVal > state.bestCentring) {
         state.bestCentring = centringVal;
@@ -735,11 +746,15 @@
 
     function updatePlayButton() {
       const b = document.getElementById("btnPlayPause");
-      const labels = { idle: "▶ Play", playing: "⏸ Pause", paused: "▶ Resume", done: "↻ Play again" };
-      b.textContent = labels[state.run] || "▶ Play";
+      const labels = { idle: ["▶", "Play"], playing: ["⏸", "Pause"], paused: ["▶", "Resume"], done: ["↻", "Play again"] };
+      const [icon, word] = labels[state.run] || labels.idle;
+      b.innerHTML = `<span class="txt-long">${icon} ${word}</span><span class="txt-short">${icon}</span>`;
+      b.title = word;
+      b.setAttribute("aria-label", word);
       b.className = state.run === "playing" ? "btn-action" : "btn-action btn-accent";
       renderScoreCards();
       updateInfoLine();
+      document.getElementById("hintV").textContent = hintText();
     }
 
     /* ------------------------------------------------------------------ */
@@ -869,17 +884,21 @@
     function renderScoreCards() {
       document.getElementById("lblPuzzle").innerHTML =
         `<span class="txt-long">${state.seed + 1} of 5</span><span class="txt-short">${state.seed + 1}/5</span>`;
-      const rec = (state.puzzleScores && state.puzzleScores[state.seed]) || {};
+      const ps = state.puzzleScores || {};
+      const rec = (ps.puzzles && ps.puzzles[state.seed]) || {};
+      const avg = ps.average || {};
+      const pct = v => (v === null || v === undefined) ? "—" : v.toFixed(1) + "%";
+      document.getElementById("valBayesAvg").textContent = pct(avg.bayes);
+      document.getElementById("valGeminiAvg").textContent = pct(avg.gemini);
       [["bayes", "valBayesPuzzle"], ["gemini", "valGeminiPuzzle"]].forEach(([mode, id]) => {
         const el = document.getElementById(id);
-        if (state.tab === mode && state.run !== "idle") {
-          const r = (state.score && state.score.reward) || 0;
+        if (state.tab === mode && state.run !== "idle") {   // live: the same number as the CENTRING badge
+          const c = ((state.score && state.score.sf) || 0) * 100;
           el.textContent = state.run === "done"
-            ? `this puzzle: ${r.toFixed(2)}`
-            : `this puzzle: ${r.toFixed(2)} · shot ${state.shot}`;
+            ? `this puzzle: ${pct(c)}`
+            : `this puzzle: ${pct(c)} · shot ${state.shot}`;
         } else {
-          const r = rec[mode];
-          el.textContent = `this puzzle: ${(r === null || r === undefined) ? "—" : r.toFixed(2)}`;
+          el.textContent = `this puzzle: ${pct(rec[mode])}`;
         }
       });
     }
@@ -894,9 +913,9 @@
 
     function setSpeed(s) {
       state.speed = s;
-      document.getElementById("spd1").className = s === 1.0 ? "btn-action btn-accent" : "btn-action";
-      document.getElementById("spd3").className = s === 3.0 ? "btn-action btn-accent" : "btn-action";
-      document.getElementById("spd10").className = s === 10.0 ? "btn-action btn-accent" : "btn-action";
+      document.getElementById("spd1").classList.toggle("btn-accent", s === 1.0);
+      document.getElementById("spd3").classList.toggle("btn-accent", s === 3.0);
+      document.getElementById("spd10").classList.toggle("btn-accent", s === 10.0);
       sendWS({ type: "set_speed", speed: state.speed });
     }
 
@@ -904,11 +923,7 @@
       const t = state.tab, isPlay = t === "play", ai = isAiView();
       const hint = document.getElementById("hintV");
       hint.className = ai ? "canvas-hint ai" : "canvas-hint";
-      hint.textContent = isPlay
-        ? (ai ? "This is all the AI sees: noisy sensor readings."
-              : "Drag a magnet up or down to change its push. Get the beam through the middle of every ring.")
-        : (t === "bayes" ? "Press Play to watch the algorithm's shots. Pause any time."
-                         : "Press Play: replay of a recorded Gemini run. Pause any time.");
+      hint.textContent = hintText();
       document.getElementById("titleV").textContent = isPlay
         ? (ai ? "AI view: what the AI gets after each shot" : "Side view: 12 up–down magnets (M1–M12) · the beam flies left → right")
         : "Side view: 12 up–down magnets (M1–M12)";
@@ -920,6 +935,7 @@
       document.getElementById("legendAi").style.display = ai ? "flex" : "none";
       document.getElementById("legendHandle").style.display = isPlay ? "inline-flex" : "none";
       document.getElementById("kpiCentring").style.display = ai ? "none" : "inline-flex";   // they reveal the true beam
+      document.getElementById("goalNote").style.display = ai ? "none" : "";
       document.getElementById("kpiBeam").style.display = ai ? "none" : "inline-flex";
       document.getElementById("slidersTitle").textContent = isPlay
         ? "Magnet strengths (or drag the magnets on the plot)"
@@ -928,6 +944,19 @@
       document.getElementById("slidersHint").textContent = isPlay
         ? "+ pushes the beam up, − pushes it down"
         : "Magnets flash on the plot when the agent changes them";
+    }
+
+    function hintText() {
+      const t = state.tab;
+      if (t === "play") {
+        return isAiView() ? "This is all the AI sees: noisy sensor readings."
+                          : "Drag a magnet up or down to change its push. Get the beam through the middle of every ring.";
+      }
+      if (state.run === "playing") return "Running… press Pause any time";
+      if (state.run === "paused") return "Paused: press Resume to continue";
+      if (state.run === "done") return "Finished. Press Play again to watch it once more.";
+      return t === "bayes" ? "Press Play to watch the algorithm's shots. Pause any time."
+                           : "Press Play: replay of a recorded Gemini run. Pause any time.";
     }
 
     function toggleAiView() {
