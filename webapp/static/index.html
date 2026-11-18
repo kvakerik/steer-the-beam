@@ -102,6 +102,7 @@
     }
     .you-hint:hover { text-decoration: underline; }
     .you-true { font-size: 11px; }
+    .ai-tip { flex-basis: 100%; color: var(--plate); font-weight: 600; }   /* own line in the AI-view legend */
     .about-h { font-family: 'Space Grotesk', sans-serif; font-size: 13px; color: var(--text); margin-top: 16px; }
     .db-card-val { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--gold); }
     .db-card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
@@ -485,6 +486,7 @@
         <span class="legend-item">they jump on every shot: the readings are noisy</span>
         <span class="legend-item">once the beam is lost, sensors only see noise</span>
         <span class="legend-item"><span class="lg-drag">↕</span>you can still drag the magnets</span>
+        <span class="legend-item ai-tip" id="aiTip">Tip: start from the left. Adjust one magnet until the next sensor’s two plates read equal, then move on to the next one.</span>
       </div>
     </div>
 
