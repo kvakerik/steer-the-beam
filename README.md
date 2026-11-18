@@ -3,9 +3,9 @@
 **▶ Try it live: [kvakerik--steer-the-beam.modal.run](https://kvakerik--steer-the-beam.modal.run)**: steer the beam yourself, then watch a Bayesian algorithm (67 %) and Gemini (29 %) on the same puzzle.
 (Hackathon version, as submitted at Junction 2026: [kvakerik--tt20-beam-steering-webapp-fastapi-app.us-east.modal.run](https://kvakerik--tt20-beam-steering-webapp-fastapi-app.us-east.modal.run))
 
-| Play | Watch the algorithm | Watch Gemini |
+| Play | Watch the algorithm (AI view) | Watch Gemini (reasoning reader) |
 | :---: | :---: | :---: |
-| [![Play: steer the 12 up–down magnets](docs/screenshots/v2-play.png)](docs/screenshots/v2-play.png) | [![Watch the algorithm: the Bayesian particle filter centres the beam to 88 % on puzzle 4](docs/screenshots/v2-watch-algorithm.png)](docs/screenshots/v2-watch-algorithm.png) | [![Watch Gemini: a recorded Gemini run reaches 23 % on puzzle 4](docs/screenshots/v2-watch-gemini.png)](docs/screenshots/v2-watch-gemini.png) |
+| [![Play: steer the 12 up–down magnets; sensor rings turn green when the beam passes centred](docs/screenshots/v2-play.png)](docs/screenshots/v2-play.png) | [![Watch the algorithm in AI view: only the noisy sensor readings the agent gets (puzzle 4, 88 % centring)](docs/screenshots/v2-watch-algorithm.png)](docs/screenshots/v2-watch-algorithm.png) | [![Watch Gemini: the reasoning reader, each step shown under the shot it led to](docs/screenshots/v2-watch-gemini.png)](docs/screenshots/v2-watch-gemini.png) |
 
 An agent operates a simulated CERN proton transfer line (TT20-like, SPS → North Area).
 Every corrector magnet has an unknown misalignment. The agent sets 22 corrector magnets and
@@ -24,7 +24,7 @@ Try the live interactive demo, deployed publicly on Modal:
 
 - **Play:** drag the 12 up–down magnets on the plot (or use the sliders) to thread the proton beam through the centre of every sensor. The **AI view** toggle hides the beam and shows only the noisy sensor readings the agent gets; a blind attempt in AI view is the fair comparison with the agents.
 - **Watch the algorithm:** replay of recorded honest Bayes runs (seeds 0–4): the reference `BayesAgent` (100,000 particles, roughening 0.2, independent agent seed), recorded with `python -m webapp.record_bayes` and replayed through the same `BeamlineEnv(seed)`, which reproduces each run exactly.
-- **Watch Gemini:** replay of the recorded OpenCode + Gemini 3.8 Flash benchmark episodes (two valid runs per puzzle, replayed in turn) with the reasoning transcript.
+- **Watch Gemini:** replay of the recorded OpenCode + Gemini 3.8 Flash benchmark episodes (two valid runs per puzzle, replayed in turn) with the full reasoning, each step shown under the shot it led to (aligned from the OpenCode event log with `python -m webapp.align_gemini`).
 - Both Watch tabs have 1×/3×/10× speed and Pause/Resume. The plots show the true beam (god view), which the agents never see.
 
 The website shows **centring %**, the true mean centring over all 21 sensors: **Algorithm 67.4 %, Gemini 29.4 %** (averages over the 5 website puzzles, using every valid recorded run). It is shown alongside the official benchmark score from 0 to 1 used in the evaluation below (**0.50 vs 0.26**), which is computed from the same centring.

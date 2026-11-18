@@ -409,6 +409,8 @@
     .about-content p { margin-top: 10px; max-width: 900px; }
     .about-content strong { color: var(--text); }
     .about-content .about-note { font-size: 12px; font-style: italic; }
+    .about-content .about-sources { font-size: 11.5px; line-height: 1.55; }
+    .about-content .about-sources a { color: var(--cyan); }
     .site-footer { padding: 4px 28px 22px; font-size: 11px; color: var(--text-muted); text-align: center; }
 
     @media (max-width: 640px) {
@@ -442,7 +444,7 @@
       <img class="brand-icon" src="/static/icon.svg" alt="" width="44" height="44">
       <div>
         <h1>Steer the Beam</h1>
-        <p>Protons fly down a 900 m tube, and 22 magnets aim them. The goal: centre the beam to 95%, good enough for physics. Can you do it better than an AI?</p>
+        <p>Protons fly down a simulated 900 m tube, and 22 magnets aim them. The goal: centre the beam to 95%, good enough for physics. Can you do it better than an AI?</p>
       </div>
     </div>
     <div id="wsStatus" class="ws-status disconnected">
@@ -608,7 +610,7 @@
           <button class="btn-action" id="btnExpand" aria-haspopup="dialog" onclick="openReader()">⤢ Expand</button>
         </div>
       </div>
-      <div class="gemini-note">Gemini’s numbers use the machine’s sign convention: a positive number pushes the opposite way to our arrows. Its log has no shot markers, so the reasoning steps are spread evenly over the shots.</div>
+      <div class="gemini-note">Gemini’s numbers use the machine’s sign convention: a positive number pushes the opposite way to our arrows. <span class="gem-order-note">Each reasoning step is shown under the shot it led to.</span></div>
       <div id="geminiBox" class="gem-panel md" tabindex="0" aria-label="Gemini's reasoning"><p class="md-empty">Press Play: Gemini’s reasoning appears here, shot by shot.</p></div>
     </div>
 
@@ -616,7 +618,7 @@
     <details class="about-box" id="aboutWhat">
       <summary>What is this?</summary>
       <div class="about-content">
-        <p>At CERN, a proton beam flies almost a kilometre through a vacuum tube, from one accelerator to the experiments. 22 small “corrector” magnets keep it on track: 12 push it up or down, 10 push it left or right. After every maintenance break their settings are slightly off, and the beam crashes into the wall. Operators then spend hours re-steering it by hand, mostly blind, because once the beam is lost, every sensor after that point goes dark.</p>
+        <p>At CERN, a proton beam flies through a vacuum tube from one accelerator to the experiments; the real line, TT20, runs about 600 m to its first splitter, and our simulated version is 900 m long. 22 small “corrector” magnets keep it on track: 12 push it up or down, 10 push it left or right. After every maintenance break their settings are slightly off, and the beam crashes into the wall. Operators then spend hours re-steering it by hand, mostly blind, because once the beam is lost, every sensor after that point goes dark.</p>
         <p>This website is a simulation of that problem, built as a test for AI agents. The agent sees only what an operator sees: 21 sensors, each made of two thin metal plates that the beam passes through. If both plates get the same amount of beam, it’s centred. Each try (“shot”) gives only a small, noisy clue, and the true magnet errors stay hidden.</p>
         <p><strong>Why it matters:</strong> AI is starting to be trusted with real scientific work. This task can’t be solved by guessing or by recalling an answer: you have to combine noisy clues over many shots and reason about what you can’t see. A dedicated statistical algorithm centres the beam to 67% on average; Gemini, one of today’s best AI models, only to 29%.</p>
         <p><strong>Why the goal is 95%, not 100%:</strong> the sensors are noisy, and the real machine never matches its blueprint exactly, so perfect centring isn’t reachable. Above about 95% the beam passes the whole line cleanly, which is good enough for the experiments. 95% is the “solved” threshold of the CERN study this project builds on.</p>
@@ -628,20 +630,25 @@
     <details class="about-box">
       <summary>Where the beam comes from</summary>
       <div class="about-content">
-        <p>CERN’s SPS accelerator speeds protons up to 400 GeV, then slowly “peels” them off over a few seconds (slow extraction) into a transfer line called TT20, built in the 1970s.</p>
-        <p>TT20 carries the beam about 600 m down an 11% slope, under CERN’s Prévessin site, to splitter magnets that divide it between three targets (T2, T4, T6) in the North Area.</p>
+        <p>CERN’s SPS accelerator speeds protons up to 400 GeV, then slowly peels them off in a steady stream rather than one burst (slow extraction), into a transfer line called TT20, built in the 1970s.</p>
+        <p>TT20 carries the beam about 600 m from the SPS, down an 11% slope under CERN’s Prévessin site, to the first splitter magnets, which divide it between three targets (T2, T4, T6) in the North Area. (Our simulated line is a TT20-like 900 m line, not the real one.)</p>
         <p>Those targets produce secondary particle beams for experiments and detector tests. An off-centre beam is lost: wasted beam time for everyone downstream, and radiation where you don’t want it.</p>
         <p>Steering magnets (correctors) along the line nudge the beam; sensors tell operators where it went.</p>
         <p>After every annual shutdown, operators re-thread TT20 by hand, a job that takes several hours. Automating it is what this research is about, and what this game lets you try.</p>
+        <p class="about-sources">Sources:
+          <a href="https://section-mpc.web.cern.ch/?p=3962" target="_blank" rel="noopener">CERN, “TT20 and North Area Consolidation”</a> (built in the 1970s at Prévessin, part of the SPS programme) ·
+          <a href="https://jwenning.web.cern.ch/documents/TrainingOP/ShutdownLectures_EG_Mar08.pdf" target="_blank" rel="noopener">E. Gschwendtner, “CNGS and North Area Operation” (2008)</a> (400 GeV/c slow extraction at LSS2, TT20 on an 11% slope to TCC2) ·
+          <a href="https://doi.org/10.18429/JACoW-IPAC2018-TUPAF033" target="_blank" rel="noopener">C. Hessler et al., IPAC’18, TUPAF033</a> (≈600 m from the SPS to the first splitter, MSSB1)
+        </p>
       </div>
     </details>
 
     <details class="about-box" id="aboutSensors">
       <summary>The sensors: two plates side by side</summary>
       <div class="about-content">
-        <p>Each sensor is a pair of very thin metal foils side by side with a tiny gap, across the beam’s path. Some measure left/right, others up/down. The real ones are called BSPs (split-foil secondary-emission monitors).</p>
+        <p>Each sensor is two very thin metal foils side by side, split at the centre line, across the beam’s path. Some measure left/right, others up/down. The real ones are called BSPs (split-foil secondary-emission monitors).</p>
         <p>Protons passing through a foil knock electrons out of the metal (“secondary emission”), so a small current flows. More beam on a foil means more current.</p>
-        <p>Equal currents mean the beam is centred. One plate much stronger means the beam is off to that side. Both near zero means the beam missed or was lost upstream. Even then there’s a little background current, so “nothing” is never exactly zero.</p>
+        <p>Equal currents mean the beam is centred. One plate much stronger means the beam is off to that side. Both near zero means the beam missed or was lost upstream. Even then there’s a little background current, so “nothing” is never exactly zero: the background is about a quarter of a full signal, and it varies a bit from puzzle to puzzle.</p>
         <p><strong>Why it matters:</strong> the plates barely disturb the beam and are robust, but they only say which side the beam leans and roughly by how much, never its exact position. With noise and magnets that don’t behave exactly as labelled, that’s what makes steering a puzzle.</p>
         <div class="plate-demo">
           <canvas id="plateCanvas" aria-label="A sensor: two plates and the beam spot. Drag the spot left or right."></canvas>
@@ -651,7 +658,7 @@
             <span id="plateStatus"></span>
           </div>
         </div>
-        <p class="tip-muted">Try it: drag the glowing beam spot (or use the slider). The bars are the two plate currents, with the same formulas and background noise as the game.</p>
+        <p class="tip-muted">Try it: drag the glowing beam spot (or use the slider). The bars are the two plate currents, with the same formulas as the game and a typical background level.</p>
         <details class="phys">
           <summary>For physicists</summary>
           <div class="phys-body">
@@ -678,7 +685,7 @@
         <p>We compute this with the standard linear optics model for transfer lines: a “response” from every magnet to every sensor.</p>
         <p>The beam has a realistic bell-shaped (Gaussian) width set by its energy and emittance, so a sensor sees a spread-out spot, not a point.</p>
         <p>Every puzzle hides errors: each magnet starts mis-set by an unknown offset, magnets are slightly stronger or weaker than their dial says, and the beam enters the line with slightly different focusing than the design. You (or the AI) must work these out from the readings.</p>
-        <p>Sensor readings include background noise.</p>
+        <p>Sensor readings include background noise, about a quarter of a full signal, varying a bit from puzzle to puzzle.</p>
         <p>The beam pipe has walls: if the beam hits a wall anywhere, it’s lost, and every sensor after that point goes dark (in both views).</p>
         <p>Goal: average centring across all sensors ≥ 95% within the shot budget (60 shots).</p>
         <p><strong>Honesty note:</strong> the beamline is a synthetic, TT20-like model (900 m long, with the same 22 steering magnets and 21 sensors as TT20), not CERN machine data. The physics follows Adam Štafa’s TT20 report.</p>
@@ -739,7 +746,7 @@
         <button class="btn-action" id="readerFollow" hidden onclick="followCurrent('reader')">Follow current shot</button>
         <button class="reader-close" id="readerClose" aria-label="Close the reader" onclick="closeReader()">×</button>
       </div>
-      <p class="reader-note">Gemini’s log has no shot markers, so its reasoning steps are spread evenly over the shots. Its numbers use the machine’s sign convention.</p>
+      <p class="reader-note"><span class="gem-order-note">Each reasoning step is shown under the shot it led to.</span> Its numbers use the machine’s sign convention.</p>
       <div class="reader-body md" id="readerBody" tabindex="0" aria-label="Gemini's reasoning, shot by shot"></div>
     </div>
   </div>
@@ -906,7 +913,7 @@
       }
 
       // Gemini reasoning: all sections arrive with the start of a replay, then are revealed shot by shot
-      if (data.agent_sections) setGeminiSections(data.agent_sections);
+      if (data.agent_sections) setGeminiSections(data.agent_sections, data.agent_sections_mode);
       if (state.tab === "gemini" && gem.groups.length) updateGeminiPanels(data.shot, data.done);
 
       // Fly the particle: every shot in Watch, and in Play once a change is finished
@@ -2113,7 +2120,7 @@
     /* ------------------------------------------------------------------ */
     /* Gemini reasoning: safe light markdown, shot sections, reader          */
     /* ------------------------------------------------------------------ */
-    const gem = { groups: [], html: [], shown: 0, current: -1, follow: { panel: true, reader: true } };
+    const gem = { groups: [], html: [], shown: 0, current: -1, nShots: 0, follow: { panel: true, reader: true } };
     let readerReturnFocus = null;
 
     function escapeHtml(t) {
@@ -2170,13 +2177,20 @@
       return [document.getElementById("geminiBox"), document.getElementById("readerBody")];
     }
 
-    function setGeminiSections(sections) {
+    // mode "aligned": each step sits under the shot whose tool call followed it (from the event log);
+    // mode "even": no usable event log, steps spread evenly over the shots
+    function setGeminiSections(sections, mode) {
       gem.groups = [];
       for (const sct of sections || []) {
         const last = gem.groups[gem.groups.length - 1];
         if (last && last.shot === sct.shot) last.texts.push(sct.text);
-        else gem.groups.push({ shot: sct.shot, texts: [sct.text] });
+        else gem.groups.push({ shot: sct.shot, after: !!sct.after, texts: [sct.text] });
       }
+      gem.nShots = Math.max(0, ...gem.groups.filter(g => !g.after).map(g => g.shot));
+      const note = mode === "even"
+        ? "This run’s log has no shot markers, so its reasoning steps are spread evenly over the shots."
+        : "Each reasoning step is shown under the shot it led to.";
+      document.querySelectorAll(".gem-order-note").forEach(el => { el.textContent = note; });
       gem.html = gem.groups.map(() => null);
       gem.shown = 0;
       gem.current = -1;
@@ -2200,7 +2214,7 @@
     function groupHtml(i) {   // rendered once per section, then reused
       if (gem.html[i] === null) {
         const g = gem.groups[i];
-        gem.html[i] = `<h4 class="md-shot-h">Shot ${g.shot}</h4>` + g.texts.map(renderMarkdown).join("");
+        gem.html[i] = `<h4 class="md-shot-h">${g.after ? "After the last shot" : `Shot ${g.shot}`}</h4>` + g.texts.map(renderMarkdown).join("");
       }
       return gem.html[i];
     }
@@ -2276,9 +2290,8 @@
       const gr = geminiRunInfo();
       let txt = `Puzzle ${state.seed + 1} · run ${gr.idx + 1} of ${gr.n || 1}`;
       if (gem.shown > 0) {
-        const lastShot = gem.groups[gem.groups.length - 1].shot;
-        const idx = gem.current >= 0 ? gem.current : gem.shown - 1;
-        txt += gem.current >= 0 ? ` · shot ${gem.groups[idx].shot} of ${lastShot}` : ` · all ${lastShot} shots`;
+        const g = gem.current >= 0 ? gem.groups[gem.current] : null;
+        txt += g ? (g.after ? ` · after the last shot` : ` · shot ${g.shot} of ${gem.nShots}`) : ` · all ${gem.nShots} shots`;
       }
       document.getElementById("readerSub").textContent = txt;
     }
@@ -2392,8 +2405,8 @@
       const pxPerM = (W - 2 * m) / (2 * R);
       const yTop = 14, yBot = 112, yMid = (yTop + yBot) / 2;
 
-      [[-demo.L, 0], [0, demo.L]].forEach(([a, b], k) => {   // the two plates (drawn with a hairline gap)
-        const x0 = toX(a) + (k === 1 ? 1.5 : 0), x1 = toX(b) - (k === 0 ? 1.5 : 0);
+      [[-demo.L, 0], [0, demo.L]].forEach(([a, b], k) => {   // the two plates, touching at the centre line (as in the model)
+        const x0 = toX(a), x1 = toX(b);
         const g = ctx.createLinearGradient(0, yTop, 0, yBot);
         g.addColorStop(0, "#2c4266");
         g.addColorStop(0.5, "#22365a");

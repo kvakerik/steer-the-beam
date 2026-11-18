@@ -368,12 +368,29 @@ def load_gemini_run(seed: int, trial: int = GEMINI_TRIAL) -> Optional[dict[str, 
     return runs[0][1] if runs else None
 
 
-def gemini_sections(blocks: list[str], n_shots: int) -> list[dict[str, Any]]:
-    """Assign each reasoning block of a recorded Gemini run to a shot number.
+GEMINI_SECTIONS_DIR = Path(__file__).resolve().parent / "data" / "gemini_sections"
 
-    The OpenCode log has no shot markers (Gemini fired most shots from its own scripts), so the
-    blocks are spread evenly over the run's shots: block b (0-based) of B belongs to shot
-    ceil((b + 1) * n / B). The client shows the blocks up to the current shot.
+
+def load_aligned_sections(trial_name: str, n_shots: int) -> Optional[list[dict[str, Any]]]:
+    """Reasoning steps assigned to the shot they precede (made by `python -m webapp.align_gemini`
+    from the ordered OpenCode event stream). None if no alignment exists for this run."""
+    f = GEMINI_SECTIONS_DIR / f"{trial_name}.json"
+    if not trial_name or not f.exists():
+        return None
+    try:
+        data = json.loads(f.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if data.get("n_shots") != n_shots:
+        return None
+    return data.get("sections") or None
+
+
+def gemini_sections(blocks: list[str], n_shots: int) -> list[dict[str, Any]]:
+    """Fallback: spread the reasoning blocks of a run evenly over its shots.
+
+    Used only when no event-order alignment exists for the run. Block b (0-based) of B belongs
+    to shot ceil((b + 1) * n / B). The client shows the blocks up to the current shot.
     """
     n_blocks = len(blocks)
     n = max(1, n_shots)
@@ -661,7 +678,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 cancel = session.cancel_event
 
                 text_blocks: list[str] = []
-                final_text = ""
                 if is_bayes:
                     with _bayes_cache_lock:
                         recorded = _bayes_cache.get(session.seed)
@@ -700,7 +716,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 if not is_bayes:
                     # The whole transcript is sent once, as per-shot sections; the client reveals them
                     # as the replay advances (no growing transcript in every shot's message).
-                    init_p["agent_sections"] = gemini_sections(text_blocks, len(feed))
+                    aligned = load_aligned_sections(run_data.get("trial_name", ""), len(feed))
+                    if aligned is not None:
+                        init_p["agent_sections"] = aligned
+                        init_p["agent_sections_mode"] = "aligned"
+                    else:
+                        init_p["agent_sections"] = gemini_sections(text_blocks, len(feed))
+                        init_p["agent_sections_mode"] = "even"
                 await session.send_state(init_p)
 
                 th = threading.Thread(
